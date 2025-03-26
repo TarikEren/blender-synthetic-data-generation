@@ -1,2 +1,2 @@
-*.png
-*.txt
+/images/*.png
+/labels/*.txt
