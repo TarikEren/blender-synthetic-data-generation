@@ -66,14 +66,67 @@ def create_objects(num_objects=5):
     objects = []
     object_classes = ['cube', 'sphere', 'cone', 'cylinder', 'torus']
     
+    # Helper function to check collision with existing objects
+    def is_colliding(position, obj_type, existing_objects):
+        # Determine object radius based on type (approximate)
+        if obj_type == 'cube':
+            radius = 1.0  # Half of size 2
+        elif obj_type == 'sphere':
+            radius = 1.0
+        elif obj_type == 'cone':
+            radius = 1.0
+        elif obj_type == 'cylinder':
+            radius = 1.0
+        elif obj_type == 'torus':
+            radius = 1.5
+        
+        # Add some padding for better spacing
+        radius += 0.5
+        
+        # Check distance to all existing objects
+        for obj in existing_objects:
+            obj_pos = obj.location
+            # Get approximate radius of existing object
+            obj_radius = 1.5  # Default for safety
+            
+            # Calculate distance between centers
+            distance = math.sqrt(
+                (position[0] - obj_pos[0])**2 + 
+                (position[1] - obj_pos[1])**2 + 
+                (position[2] - obj_pos[2])**2
+            )
+            
+            # If distance is less than sum of radii, they collide
+            if distance < (radius + obj_radius):
+                return True
+                
+        # No collision found
+        return False
+    
     for i in range(num_objects):
-        # Randomly position within visible area (adjust x,y range to match camera FOV)
-        x = random.uniform(-10, 10)
-        y = random.uniform(-10, 10)
-        z = random.uniform(0, 3)  # Height above ground
+        # Try to find a non-colliding position
+        max_attempts = 50
+        attempt = 0
+        colliding = True
         
         # Randomly choose an object type
         obj_type = random.choice(object_classes)
+        
+        x, y, z = 0, 0, 0
+        
+        # Keep trying until we find a non-colliding position
+        while colliding and attempt < max_attempts:
+            # Randomly position within visible area (adjust x,y range to match camera FOV)
+            x = random.uniform(-10, 10)
+            y = random.uniform(-10, 10)
+            z = random.uniform(0, 3)  # Height above ground
+            
+            # Check if this position would collide with existing objects
+            colliding = is_colliding((x, y, z), obj_type, objects)
+            attempt += 1
+        
+        # If we couldn't find a non-colliding position after max attempts,
+        # just use the last position we tried and continue
         
         # Create the object based on type
         if obj_type == 'cube':
