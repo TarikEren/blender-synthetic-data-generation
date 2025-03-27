@@ -43,10 +43,56 @@ def setup_scene():
     
     # Configure render settings
     scene.render.engine = 'CYCLES'  # Use Cycles renderer
+    
+    # Enable GPU rendering
+    prefs = bpy.context.preferences
+    cuda_prefs = prefs.addons['cycles'].preferences
+    
+    # Print available devices for debugging
+    print("\nAvailable Devices:")
+    for device in cuda_prefs.devices:
+        print(f"Device: {device.name}, Type: {device.type}, Use: {device.use}")
+    
+    # Force CUDA compute type and refresh devices
+    cuda_prefs.compute_device_type = 'CUDA'
+    cuda_prefs.refresh_devices()
+    
+    # Enable all available CUDA devices
+    for device in cuda_prefs.devices:
+        if device.type == 'CUDA':
+            device.use = True
+            print(f"Enabled CUDA device: {device.name}")
+    
+    # Set render settings for faster preview
     scene.render.resolution_x = 1920
     scene.render.resolution_y = 1080
     scene.render.resolution_percentage = 100
     scene.render.filepath = '//rendered_image.png'
+    
+    # Optimize render settings for GPU
+    scene.cycles.device = 'GPU'
+    scene.cycles.tile_size = 256  # Larger tile size for GPU
+    scene.cycles.samples = 128    # Reduced samples for faster preview
+    scene.cycles.use_denoising = True  # Enable denoising for cleaner results
+    
+    # Additional GPU optimizations
+    scene.cycles.use_adaptive_sampling = True
+    scene.cycles.adaptive_threshold = 0.01
+    scene.cycles.adaptive_min_samples = 64
+    scene.cycles.use_denoising_prefilter = True
+    
+    # Force GPU compute
+    scene.cycles.feature_set = 'EXPERIMENTAL'
+    scene.cycles.use_denoising_prefilter = True
+    scene.cycles.use_denoising_denoising = True
+    
+    # Print render settings for verification
+    print("\nRender Settings:")
+    print(f"Device: {scene.cycles.device}")
+    print(f"Tile Size: {scene.cycles.tile_size}")
+    print(f"Samples: {scene.cycles.samples}")
+    print(f"Denoising: {scene.cycles.use_denoising}")
+    print(f"Feature Set: {scene.cycles.feature_set}")
     
     # Adjust world settings (simple white background)
     world = bpy.data.worlds['World']
@@ -509,15 +555,20 @@ def generate_single_image(index, images_dir, labels_dir):
     """
     print(f"Generating image {index+1}")
     
+    # Convert relative paths to absolute paths
+    images_dir_abs = os.path.abspath(images_dir)
+    labels_dir_abs = os.path.abspath(labels_dir)
+    
+    # Create directories if they don't exist
+    os.makedirs(images_dir_abs, exist_ok=True)
+    os.makedirs(labels_dir_abs, exist_ok=True)
+    
     # Set up filenames for this image
     image_filename = f"image_{index:03d}.png"
     label_filename = f"image_{index:03d}.txt"
-    render_path = os.path.join(images_dir, image_filename)
-    bbox_path = os.path.join(labels_dir, label_filename)
-    visualization_path = os.path.join(images_dir, f"vis_{index:03d}.png")
-    
-    # Generate absolute paths
-    render_path_abs = bpy.path.abspath(render_path)
+    render_path = os.path.join(images_dir_abs, image_filename)
+    bbox_path = os.path.join(labels_dir_abs, label_filename)
+    visualization_path = os.path.join(images_dir_abs, f"vis_{index:03d}.png")
     
     # Clear the scene
     clear_scene()
@@ -546,7 +597,7 @@ def generate_single_image(index, images_dir, labels_dir):
     bpy.ops.render.render(write_still=True)
     
     # Visualize and test the bounding boxes
-    visualize_bounding_boxes(render_path_abs, bbox_path, visualization_path)
+    visualize_bounding_boxes(render_path, bbox_path, visualization_path)
     
     print(f"Image {index+1} rendered to: {render_path}")
     print(f"Labels saved to: {bbox_path}") 
