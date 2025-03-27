@@ -12,7 +12,6 @@ import bpy
 import numpy as np
 import os
 import math
-import bmesh
 from mathutils import Vector
 import cv2
 import random
