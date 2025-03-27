@@ -1,2 +1,3 @@
 /images/*.png
 /labels/*.txt
+/__pycache__

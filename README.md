@@ -1,6 +1,23 @@
 # Blender Bounding Box Generator
 
-This script generates 3D objects in Blender, renders them from a top-down camera view, calculates their 2D bounding boxes, and exports them in YOLO format.
+This project generates 3D objects in Blender, renders them from a top-down camera view, calculates their 2D bounding boxes, and exports them in YOLO format.
+
+## Features
+
+- Runs Blender in headless mode
+- Creates random 3D scenes with varied objects
+- Positions objects without collisions
+- Uses different lighting setups for visual variety
+- Calculates accurate 2D bounding boxes for each object
+- Exports bounding boxes in YOLO format
+- Creates visualization images to verify bounding box accuracy
+
+## Project Structure
+
+The project has been organized into separate files for better maintainability:
+
+- **main.py**: Driver script that handles command-line arguments and orchestrates the generation process
+- **utils.py**: Utility functions for scene setup, object creation, bounding box calculation, and visualization
 
 ## Requirements
 
@@ -23,29 +40,29 @@ This script generates 3D objects in Blender, renders them from a top-down camera
 To run Blender in headless mode with this script:
 
 ```bash
-blender --background --python blender_bbox_generator.py
+blender --background --python main.py -- --num-images 20
 ```
 
-### What the Script Does
+Or you can use the default settings:
 
-1. Clears any existing scene
-2. Sets up a new scene with appropriate render settings
-3. Creates a camera at position (0, 0, 50) looking straight down
-4. Generates random 3D objects (cubes, spheres, cones, cylinders, and tori)
-5. Calculates 2D bounding boxes for each object
-6. Saves bounding boxes in YOLO format (class_idx, x_center, y_center, width, height)
-7. Renders the scene as an image
-8. Creates a visualization that shows the bounding boxes overlaid on the rendered image
+```bash
+blender --background --python main.py
+```
 
-### Output Files
+### Command-line Arguments
 
-The script generates three files in the same directory:
+- `--num-images`: Number of images to generate (default: 10)
+- `--output-dir`: Directory to save output (default: script directory)
 
-1. `rendered_image.png` - The rendered scene
-2. `bounding_boxes.txt` - YOLO format bounding boxes
-3. `visualization.png` - Image with bounding boxes overlaid for verification
+### Output
 
-## YOLO Format
+The script generates the following output:
+
+- **./images/image_XXX.png**: Rendered scenes
+- **./images/vis_XXX.png**: Visualization images with bounding boxes
+- **./labels/image_XXX.txt**: YOLO format bounding box coordinates
+
+### YOLO Format
 
 The bounding box format used is:
 ```
@@ -53,14 +70,20 @@ The bounding box format used is:
 ```
 
 Where:
-- `class_id` is an integer (0-4) representing the object type
+- `class_id` is an integer (0-4) representing the object type:
+  - 0: Cube
+  - 1: Sphere
+  - 2: Cone
+  - 3: Cylinder
+  - 4: Torus
 - All other values are normalized to [0,1]
 - (0,0) is the top-left corner of the image
 
 ## Customization
 
-You can modify the script to:
-- Change the number of objects by editing the `num_objects` parameter in the `main()` function
-- Adjust camera position and field of view
-- Change render resolution
-- Add more object types 
+You can modify various aspects of the generator:
+
+- Edit `utils.py` to change object types, materials, lighting setups, etc.
+- Adjust the number of objects per scene in `create_objects` function (default: 7)
+- Change render settings in `setup_scene` function
+- Modify camera position and field of view in `create_camera` function 

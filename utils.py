@@ -1,15 +1,26 @@
-#!/usr/bin/env python3
+"""
+Blender Bounding Box Generator Utilities
+
+This module contains utility functions for generating 3D objects in Blender,
+rendering them, calculating their 2D bounding boxes, and exporting them in YOLO format.
+"""
+
+#------------------------------------------------------------------------------
+# IMPORTS
+#------------------------------------------------------------------------------
 import bpy
 import numpy as np
 import os
 import math
-import bmesh
 from mathutils import Vector
 import cv2
 import random
 
-# Clear existing objects
+#------------------------------------------------------------------------------
+# SCENE SETUP AND MANAGEMENT
+#------------------------------------------------------------------------------
 def clear_scene():
+    """Remove all objects, materials, meshes and lights from the scene."""
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete()
     
@@ -25,8 +36,8 @@ def clear_scene():
     for light in bpy.data.lights:
         bpy.data.lights.remove(light)
 
-# Set up the scene
 def setup_scene():
+    """Configure scene settings for rendering."""
     # Create a new scene with all default settings
     scene = bpy.context.scene
     
@@ -46,8 +57,11 @@ def setup_scene():
     
     return scene
 
-# Create a camera at position (0,0,50) looking down
+#------------------------------------------------------------------------------
+# CAMERA FUNCTIONS
+#------------------------------------------------------------------------------
 def create_camera():
+    """Create a camera positioned above the scene looking down."""
     bpy.ops.object.camera_add(location=(0, 0, 50))
     camera = bpy.context.active_object
     
@@ -65,8 +79,103 @@ def create_camera():
     
     return camera
 
-# Create random objects within the camera's field of view
+#------------------------------------------------------------------------------
+# LIGHTING FUNCTIONS
+#------------------------------------------------------------------------------
+def setup_lighting(seed=None):
+    """Create randomized lighting setup for the scene."""
+    if seed is not None:
+        random.seed(seed)
+    
+    # Delete existing lights
+    for obj in bpy.data.objects:
+        if obj.type == 'LIGHT':
+            bpy.data.objects.remove(obj)
+    
+    # Determine lighting style for this scene
+    lighting_style = random.choice(['three_point', 'studio', 'outdoor', 'dramatic'])
+    
+    if lighting_style == 'three_point':
+        # Key light (main light)
+        key_light = bpy.data.objects.new(name="KeyLight", object_data=bpy.data.lights.new(name="KeyLight", type='AREA'))
+        key_light.location = (random.uniform(8, 12), random.uniform(-5, 5), random.uniform(10, 15))
+        key_light.rotation_euler = (random.uniform(0, 0.5), random.uniform(-0.5, 0.5), random.uniform(-0.5, 0.5))
+        bpy.context.collection.objects.link(key_light)
+        key_light.data.energy = random.uniform(800, 1200)
+        key_light.data.size = random.uniform(5, 10)
+        
+        # Fill light (softer, less intense)
+        fill_light = bpy.data.objects.new(name="FillLight", object_data=bpy.data.lights.new(name="FillLight", type='AREA'))
+        fill_light.location = (random.uniform(-12, -8), random.uniform(-5, 5), random.uniform(8, 12))
+        bpy.context.collection.objects.link(fill_light)
+        fill_light.data.energy = random.uniform(300, 500)
+        fill_light.data.size = random.uniform(8, 15)
+        
+        # Back light (rim light)
+        back_light = bpy.data.objects.new(name="BackLight", object_data=bpy.data.lights.new(name="BackLight", type='AREA'))
+        back_light.location = (random.uniform(-3, 3), random.uniform(-12, -8), random.uniform(12, 15))
+        bpy.context.collection.objects.link(back_light)
+        back_light.data.energy = random.uniform(500, 700)
+        back_light.data.size = random.uniform(3, 6)
+        
+    elif lighting_style == 'studio':
+        # Soft overhead lighting
+        for i in range(4):
+            light = bpy.data.objects.new(name=f"StudioLight{i}", object_data=bpy.data.lights.new(name=f"StudioLight{i}", type='AREA'))
+            x = random.uniform(-8, 8)
+            y = random.uniform(-8, 8)
+            light.location = (x, y, random.uniform(10, 15))
+            bpy.context.collection.objects.link(light)
+            light.data.energy = random.uniform(300, 500)
+            light.data.size = random.uniform(4, 8)
+            
+    elif lighting_style == 'outdoor':
+        # Sun light (directional)
+        sun = bpy.data.objects.new(name="Sun", object_data=bpy.data.lights.new(name="Sun", type='SUN'))
+        sun.location = (random.uniform(-5, 5), random.uniform(-5, 5), random.uniform(15, 20))
+        sun.rotation_euler = (random.uniform(0, 0.8), random.uniform(-0.8, 0.8), random.uniform(-0.8, 0.8))
+        bpy.context.collection.objects.link(sun)
+        sun.data.energy = random.uniform(2, 5)
+        
+        # Ambient light
+        ambient = bpy.data.objects.new(name="Ambient", object_data=bpy.data.lights.new(name="Ambient", type='AREA'))
+        ambient.location = (0, 0, random.uniform(10, 15))
+        ambient.scale = (20, 20, 1)
+        bpy.context.collection.objects.link(ambient)
+        ambient.data.energy = random.uniform(100, 300)
+        
+    elif lighting_style == 'dramatic':
+        # Strong single light source
+        main_light = bpy.data.objects.new(name="DramaticLight", object_data=bpy.data.lights.new(name="DramaticLight", type='SPOT'))
+        main_light.location = (random.uniform(-10, 10), random.uniform(-10, 10), random.uniform(12, 18))
+        main_light.rotation_euler = (random.uniform(0, 0.8), random.uniform(-0.8, 0.8), random.uniform(-0.8, 0.8))
+        bpy.context.collection.objects.link(main_light)
+        main_light.data.energy = random.uniform(1000, 2000)
+        main_light.data.spot_size = random.uniform(0.5, 1.2)
+        
+        # Subtle fill light
+        fill = bpy.data.objects.new(name="DramaticFill", object_data=bpy.data.lights.new(name="DramaticFill", type='AREA'))
+        fill.location = (-main_light.location.x, -main_light.location.y, random.uniform(5, 10))
+        bpy.context.collection.objects.link(fill)
+        fill.data.energy = random.uniform(100, 200)
+    
+    # Reset random seed
+    if seed is not None:
+        random.seed()
+
+#------------------------------------------------------------------------------
+# OBJECT GENERATION
+#------------------------------------------------------------------------------
 def create_objects(num_objects=5, distribution_seed=None):
+    """Create random 3D objects within the camera's field of view.
+    
+    Args:
+        num_objects: Number of objects to create
+        distribution_seed: Seed for random number generator
+        
+    Returns:
+        List of created objects
+    """
     # Set a random seed for this distribution if provided
     if distribution_seed is not None:
         random.seed(distribution_seed)
@@ -214,8 +323,57 @@ def create_objects(num_objects=5, distribution_seed=None):
         
     return objects
 
-# Calculate 2D bounding boxes for objects in the scene
+#------------------------------------------------------------------------------
+# BOUNDING BOX CALCULATION
+#------------------------------------------------------------------------------
+def bpy_coords_to_pixel_coords(scene, camera, coord):
+    """Convert 3D world coordinates to 2D pixel coordinates using the camera projection.
+    
+    Args:
+        scene: The Blender scene
+        camera: The camera object
+        coord: 3D coordinate to project
+        
+    Returns:
+        Tuple of (x, y) pixel coordinates
+    """
+    render = scene.render
+    res_x = render.resolution_x
+    res_y = render.resolution_y
+    
+    # Convert world coordinates to camera view coordinates
+    co_local = camera.matrix_world.inverted() @ coord
+    
+    # Convert camera coordinates to normalized device coordinates
+    if co_local.z == 0:
+        # Avoid division by zero
+        co_local.z = 0.0001
+        
+    co_2d = (co_local.x / -co_local.z, co_local.y / -co_local.z)
+    
+    # Convert normalized device coordinates to pixel coordinates
+    render_scale = render.resolution_percentage / 100
+    
+    # Account for camera sensor size and lens
+    camera_data = camera.data
+    sensor_width = camera_data.sensor_width
+    sensor_height = sensor_width * res_y / res_x
+    pixel_x = res_x * render_scale * (co_2d[0] * camera_data.lens / sensor_width + 0.5)
+    pixel_y = res_y * render_scale * (co_2d[1] * camera_data.lens / sensor_height + 0.5)
+    
+    return (pixel_x, pixel_y)
+
 def calculate_bounding_boxes(scene, camera, objects):
+    """Calculate 2D bounding boxes for 3D objects in the scene.
+    
+    Args:
+        scene: The Blender scene
+        camera: The camera object
+        objects: List of objects to calculate bounding boxes for
+        
+    Returns:
+        List of dictionaries containing bounding box data
+    """
     bounding_boxes = []
     
     # Get render dimensions
@@ -270,44 +428,30 @@ def calculate_bounding_boxes(scene, camera, objects):
     
     return bounding_boxes
 
-# Helper function to convert 3D coordinates to 2D pixel coordinates
-def bpy_coords_to_pixel_coords(scene, camera, coord):
-    render = scene.render
-    res_x = render.resolution_x
-    res_y = render.resolution_y
-    
-    # Convert world coordinates to camera view coordinates
-    co_local = camera.matrix_world.inverted() @ coord
-    
-    # Convert camera coordinates to normalized device coordinates
-    if co_local.z == 0:
-        # Avoid division by zero
-        co_local.z = 0.0001
-        
-    co_2d = (co_local.x / -co_local.z, co_local.y / -co_local.z)
-    
-    # Convert normalized device coordinates to pixel coordinates
-    render_scale = render.resolution_percentage / 100
-    
-    # Account for camera sensor size and lens
-    camera_data = camera.data
-    sensor_width = camera_data.sensor_width
-    sensor_height = sensor_width * res_y / res_x
-    pixel_x = res_x * render_scale * (co_2d[0] * camera_data.lens / sensor_width + 0.5)
-    pixel_y = res_y * render_scale * (co_2d[1] * camera_data.lens / sensor_height + 0.5)
-    
-    return (pixel_x, pixel_y)
-
-# Save bounding boxes in YOLO format
 def save_yolo_format(bounding_boxes, output_path):
+    """Save bounding boxes in YOLO format.
+    
+    Args:
+        bounding_boxes: List of bounding box dictionaries
+        output_path: Path to save the YOLO format file
+    """
     with open(output_path, 'w') as f:
         for box in bounding_boxes:
             # YOLO format: class_idx x_center y_center width height
             # All values are normalized to [0,1]
             f.write(f"{box['class_idx']} {box['x_center']:.6f} {box['y_center']:.6f} {box['width']:.6f} {box['height']:.6f}\n")
 
-# Create a visualization to test if bounding boxes are correct
+#------------------------------------------------------------------------------
+# VISUALIZATION
+#------------------------------------------------------------------------------
 def visualize_bounding_boxes(image_path, bbox_file, output_path):
+    """Create a visualization of bounding boxes on the rendered image.
+    
+    Args:
+        image_path: Path to the rendered image
+        bbox_file: Path to the YOLO format bounding box file
+        output_path: Path to save the visualization
+    """
     # Read the image
     img = cv2.imread(image_path)
     
@@ -352,150 +496,57 @@ def visualize_bounding_boxes(image_path, bbox_file, output_path):
     # Save annotated image
     cv2.imwrite(output_path, img)
 
-# Set up randomized lighting
-def setup_lighting(seed=None):
-    if seed is not None:
-        random.seed(seed)
+#------------------------------------------------------------------------------
+# IMAGE GENERATION
+#------------------------------------------------------------------------------
+def generate_single_image(index, images_dir, labels_dir):
+    """Generate a single image with bounding boxes.
     
-    # Delete existing lights
-    for obj in bpy.data.objects:
-        if obj.type == 'LIGHT':
-            bpy.data.objects.remove(obj)
+    Args:
+        index: Index of the image to generate
+        images_dir: Directory to save images
+        labels_dir: Directory to save labels
+    """
+    print(f"Generating image {index+1}")
     
-    # Determine lighting style for this scene
-    lighting_style = random.choice(['three_point', 'studio', 'outdoor', 'dramatic'])
+    # Set up filenames for this image
+    image_filename = f"image_{index:03d}.png"
+    label_filename = f"image_{index:03d}.txt"
+    render_path = os.path.join(images_dir, image_filename)
+    bbox_path = os.path.join(labels_dir, label_filename)
+    visualization_path = os.path.join(images_dir, f"vis_{index:03d}.png")
     
-    if lighting_style == 'three_point':
-        # Key light (main light)
-        key_light = bpy.data.objects.new(name="KeyLight", object_data=bpy.data.lights.new(name="KeyLight", type='AREA'))
-        key_light.location = (random.uniform(8, 12), random.uniform(-5, 5), random.uniform(10, 15))
-        key_light.rotation_euler = (random.uniform(0, 0.5), random.uniform(-0.5, 0.5), random.uniform(-0.5, 0.5))
-        bpy.context.collection.objects.link(key_light)
-        key_light.data.energy = random.uniform(800, 1200)
-        key_light.data.size = random.uniform(5, 10)
-        
-        # Fill light (softer, less intense)
-        fill_light = bpy.data.objects.new(name="FillLight", object_data=bpy.data.lights.new(name="FillLight", type='AREA'))
-        fill_light.location = (random.uniform(-12, -8), random.uniform(-5, 5), random.uniform(8, 12))
-        bpy.context.collection.objects.link(fill_light)
-        fill_light.data.energy = random.uniform(300, 500)
-        fill_light.data.size = random.uniform(8, 15)
-        
-        # Back light (rim light)
-        back_light = bpy.data.objects.new(name="BackLight", object_data=bpy.data.lights.new(name="BackLight", type='AREA'))
-        back_light.location = (random.uniform(-3, 3), random.uniform(-12, -8), random.uniform(12, 15))
-        bpy.context.collection.objects.link(back_light)
-        back_light.data.energy = random.uniform(500, 700)
-        back_light.data.size = random.uniform(3, 6)
-        
-    elif lighting_style == 'studio':
-        # Soft overhead lighting
-        for i in range(4):
-            light = bpy.data.objects.new(name=f"StudioLight{i}", object_data=bpy.data.lights.new(name=f"StudioLight{i}", type='AREA'))
-            x = random.uniform(-8, 8)
-            y = random.uniform(-8, 8)
-            light.location = (x, y, random.uniform(10, 15))
-            bpy.context.collection.objects.link(light)
-            light.data.energy = random.uniform(300, 500)
-            light.data.size = random.uniform(4, 8)
-            
-    elif lighting_style == 'outdoor':
-        # Sun light (directional)
-        sun = bpy.data.objects.new(name="Sun", object_data=bpy.data.lights.new(name="Sun", type='SUN'))
-        sun.location = (random.uniform(-5, 5), random.uniform(-5, 5), random.uniform(15, 20))
-        sun.rotation_euler = (random.uniform(0, 0.8), random.uniform(-0.8, 0.8), random.uniform(-0.8, 0.8))
-        bpy.context.collection.objects.link(sun)
-        sun.data.energy = random.uniform(2, 5)
-        
-        # Ambient light
-        ambient = bpy.data.objects.new(name="Ambient", object_data=bpy.data.lights.new(name="Ambient", type='AREA'))
-        ambient.location = (0, 0, random.uniform(10, 15))
-        ambient.scale = (20, 20, 1)
-        bpy.context.collection.objects.link(ambient)
-        ambient.data.energy = random.uniform(100, 300)
-        
-    elif lighting_style == 'dramatic':
-        # Strong single light source
-        main_light = bpy.data.objects.new(name="DramaticLight", object_data=bpy.data.lights.new(name="DramaticLight", type='SPOT'))
-        main_light.location = (random.uniform(-10, 10), random.uniform(-10, 10), random.uniform(12, 18))
-        main_light.rotation_euler = (random.uniform(0, 0.8), random.uniform(-0.8, 0.8), random.uniform(-0.8, 0.8))
-        bpy.context.collection.objects.link(main_light)
-        main_light.data.energy = random.uniform(1000, 2000)
-        main_light.data.spot_size = random.uniform(0.5, 1.2)
-        
-        # Subtle fill light
-        fill = bpy.data.objects.new(name="DramaticFill", object_data=bpy.data.lights.new(name="DramaticFill", type='AREA'))
-        fill.location = (-main_light.location.x, -main_light.location.y, random.uniform(5, 10))
-        bpy.context.collection.objects.link(fill)
-        fill.data.energy = random.uniform(100, 200)
+    # Generate absolute paths
+    render_path_abs = bpy.path.abspath(render_path)
     
-    # Reset random seed
-    if seed is not None:
-        random.seed()
-
-# Main function to run the entire pipeline
-def main():
-    # Setup directories
-    base_dir = os.path.dirname(bpy.data.filepath) or os.getcwd()
-    images_dir = os.path.join(base_dir, "images")
-    labels_dir = os.path.join(base_dir, "labels")
+    # Clear the scene
+    clear_scene()
     
-    # Create directories if they don't exist
-    os.makedirs(images_dir, exist_ok=True)
-    os.makedirs(labels_dir, exist_ok=True)
+    # Setup scene
+    scene = setup_scene()
+    scene.render.filepath = render_path
     
-    # Number of images to generate
-    num_images = 10
+    # Create camera
+    camera = create_camera()
     
-    # Generate the specified number of images
-    for i in range(num_images):
-        print(f"Generating image {i+1}/{num_images}")
-        
-        # Set up filenames for this image
-        image_filename = f"image_{i:03d}.png"
-        label_filename = f"image_{i:03d}.txt"
-        render_path = os.path.join(images_dir, image_filename)
-        bbox_path = os.path.join(labels_dir, label_filename)
-        visualization_path = os.path.join(images_dir, f"vis_{i:03d}.png")
-        
-        # Generate absolute paths
-        render_path_abs = bpy.path.abspath(render_path)
-        
-        # Clear the scene
-        clear_scene()
-        
-        # Setup scene
-        scene = setup_scene()
-        scene.render.filepath = render_path
-        
-        # Create camera
-        camera = create_camera()
-        
-        # Setup randomized lighting using the image index as seed
-        setup_lighting(seed=i+100)  # Use different seed range from object positioning
-        
-        # Create objects with randomized positions
-        # Use the image number as a seed for reproducibility
-        objects = create_objects(num_objects=7, distribution_seed=i)
-        
-        # Calculate bounding boxes
-        bounding_boxes = calculate_bounding_boxes(scene, camera, objects)
-        
-        # Save bounding boxes in YOLO format
-        save_yolo_format(bounding_boxes, bbox_path)
-        
-        # Render the scene
-        bpy.ops.render.render(write_still=True)
-        
-        # Visualize and test the bounding boxes
-        visualize_bounding_boxes(render_path_abs, bbox_path, visualization_path)
-        
-        print(f"Image {i+1} rendered to: {render_path}")
-        print(f"Labels saved to: {bbox_path}")
+    # Setup randomized lighting using the image index as seed
+    setup_lighting(seed=index+100)  # Use different seed range from object positioning
     
-    print(f"Complete! Generated {num_images} images in {images_dir}")
-    print(f"Labels saved to {labels_dir}")
-
-# Run the script
-if __name__ == "__main__":
-    main() 
+    # Create objects with randomized positions
+    # Use the image number as a seed for reproducibility
+    objects = create_objects(num_objects=7, distribution_seed=index)
+    
+    # Calculate bounding boxes
+    bounding_boxes = calculate_bounding_boxes(scene, camera, objects)
+    
+    # Save bounding boxes in YOLO format
+    save_yolo_format(bounding_boxes, bbox_path)
+    
+    # Render the scene
+    bpy.ops.render.render(write_still=True)
+    
+    # Visualize and test the bounding boxes
+    visualize_bounding_boxes(render_path_abs, bbox_path, visualization_path)
+    
+    print(f"Image {index+1} rendered to: {render_path}")
+    print(f"Labels saved to: {bbox_path}") 
