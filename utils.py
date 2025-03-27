@@ -1,9 +1,8 @@
-#!/usr/bin/env python3
 """
-Blender Bounding Box Generator
+Blender Bounding Box Generator Utilities
 
-This script generates 3D objects in Blender, renders them from a top-down camera view,
-calculates their 2D bounding boxes, and exports them in YOLO format.
+This module contains utility functions for generating 3D objects in Blender,
+rendering them, calculating their 2D bounding boxes, and exporting them in YOLO format.
 """
 
 #------------------------------------------------------------------------------
@@ -499,7 +498,7 @@ def visualize_bounding_boxes(image_path, bbox_file, output_path):
     cv2.imwrite(output_path, img)
 
 #------------------------------------------------------------------------------
-# MAIN EXECUTION
+# IMAGE GENERATION
 #------------------------------------------------------------------------------
 def generate_single_image(index, images_dir, labels_dir):
     """Generate a single image with bounding boxes.
@@ -551,29 +550,4 @@ def generate_single_image(index, images_dir, labels_dir):
     visualize_bounding_boxes(render_path_abs, bbox_path, visualization_path)
     
     print(f"Image {index+1} rendered to: {render_path}")
-    print(f"Labels saved to: {bbox_path}")
-
-def main():
-    """Main function to run the entire pipeline."""
-    # Setup directories
-    base_dir = os.path.dirname(bpy.data.filepath) or os.getcwd()
-    images_dir = os.path.join(base_dir, "images")
-    labels_dir = os.path.join(base_dir, "labels")
-    
-    # Create directories if they don't exist
-    os.makedirs(images_dir, exist_ok=True)
-    os.makedirs(labels_dir, exist_ok=True)
-    
-    # Number of images to generate
-    num_images = 2
-    
-    # Generate the specified number of images
-    for i in range(num_images):
-        generate_single_image(i, images_dir, labels_dir)
-    
-    print(f"Complete! Generated {num_images} images in {images_dir}")
-    print(f"Labels saved to {labels_dir}")
-
-# Execute the script
-if __name__ == "__main__":
-    main() 
+    print(f"Labels saved to: {bbox_path}") 
