@@ -12,6 +12,7 @@ import bpy
 import numpy as np
 import os
 import math
+from mathutils import Vector # type: ignore
 import cv2
 import random
 
