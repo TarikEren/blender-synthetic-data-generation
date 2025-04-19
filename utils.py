@@ -545,19 +545,118 @@ def visualize_bounding_boxes(image_path, bbox_file, output_path):
 #------------------------------------------------------------------------------
 # IMAGE GENERATION
 #------------------------------------------------------------------------------
-def generate_single_image(index, images_dir, labels_dir):
-    """Generate a single image with bounding boxes.
+def import_custom_model(model_path):
+    """Import a custom 3D model into the scene."""
+    print(f"\nAttempting to import model from: {model_path}")
     
-    Args:
-        index: Index of the image to generate
-        images_dir: Directory to save images
-        labels_dir: Directory to save labels
-    """
-    print(f"Generating image {index+1}")
+    # Clear the scene first
+    clear_scene()
+    
+    # Import the model based on file extension
+    file_ext = os.path.splitext(model_path)[1].lower()
+    print(f"File extension: {file_ext}")
+    
+    try:
+        # Store the current object names
+        existing_objects = set(obj.name for obj in bpy.data.objects)
+        
+        # Import based on file type
+        if file_ext == '.obj':
+            print("Importing OBJ file...")
+            try:
+                # First try the new method (Blender 4.x)
+                if hasattr(bpy.ops.wm, 'obj_import'):
+                    bpy.ops.wm.obj_import(filepath=model_path)
+                # Then try the legacy method
+                elif hasattr(bpy.ops.import_scene, 'obj'):
+                    bpy.ops.import_scene.obj(filepath=model_path)
+                else:
+                    raise ImportError("No OBJ import operator found")
+            except Exception as e:
+                print(f"Import error: {str(e)}")
+                raise
+        elif file_ext == '.fbx':
+            print("Importing FBX file...")
+            if hasattr(bpy.ops.wm, 'fbx_import'):
+                bpy.ops.wm.fbx_import(filepath=model_path)
+            else:
+                bpy.ops.import_scene.fbx(filepath=model_path)
+        elif file_ext == '.blend':
+            print("Importing Blend file...")
+            bpy.ops.wm.append(filepath=model_path)
+        else:
+            raise ValueError(f"Unsupported file format: {file_ext}")
+        
+        # Find newly added objects
+        new_objects = [obj for obj in bpy.data.objects if obj.name not in existing_objects]
+        print(f"New objects after import: {new_objects}")
+        
+        if not new_objects:
+            raise ValueError("No new objects were imported")
+            
+        # Get the main imported object (usually the first one)
+        imported_obj = new_objects[0]
+        print(f"Using imported object: {imported_obj.name}")
+        
+        # Store the object's name for later reference
+        obj_name = imported_obj.name
+        
+        try:
+            # Set a custom property to identify this as a custom model
+            bpy.data.objects[obj_name]['class_idx'] = 0
+            
+            # Get object dimensions before any changes
+            dims = bpy.data.objects[obj_name].dimensions.copy()
+            max_dim = max(dims)
+            
+            if max_dim > 0:  # Avoid division by zero
+                # Calculate scale to make largest dimension 5 units
+                scale_factor = 5.0 / max_dim
+                
+                # Scale and position the object
+                obj = bpy.data.objects[obj_name]
+                obj.scale = (scale_factor, scale_factor, scale_factor)
+                
+                # Reset all rotations first
+                obj.rotation_euler = (0, 0, 0)
+                
+                # Apply 90 degrees counter-clockwise rotation around all axes
+                # Note: math.pi/2 is 90 degrees
+                obj.rotation_euler = (math.pi/2, math.pi/2, math.pi/2)
+                
+                # Update the scene to apply rotation
+                bpy.context.view_layer.update()
+                
+                # Position slightly above ground after rotation
+                obj.location = (0, 0, 2)
+                
+                print(f"Adjusted object scale to {scale_factor}, rotated 90 degrees on X, Y, and Z axes, and positioned at height 2")
+            else:
+                print("Warning: Object has zero dimensions")
+            
+        except Exception as e:
+            print(f"Warning: Error during object adjustment: {str(e)}")
+            print("Continuing with unadjusted object...")
+        
+        return obj_name  # Return the name instead of the object reference
+        
+    except Exception as e:
+        print(f"Error during model import: {str(e)}")
+        raise
+
+def generate_single_image(index, images_dir, labels_dir, custom_model_path=None):
+    """Generate a single image with bounding boxes."""
+    print(f"\nGenerating image {index+1}")
+    print(f"Custom model path: {custom_model_path}")
     
     # Convert relative paths to absolute paths
     images_dir_abs = os.path.abspath(images_dir)
     labels_dir_abs = os.path.abspath(labels_dir)
+    
+    if custom_model_path:
+        custom_model_abs = os.path.abspath(custom_model_path)
+        print(f"Absolute custom model path: {custom_model_abs}")
+        print(f"Custom model file exists: {os.path.exists(custom_model_abs)}")
     
     # Create directories if they don't exist
     os.makedirs(images_dir_abs, exist_ok=True)
@@ -570,34 +669,110 @@ def generate_single_image(index, images_dir, labels_dir):
     bbox_path = os.path.join(labels_dir_abs, label_filename)
     visualization_path = os.path.join(images_dir_abs, f"vis_{index:03d}.png")
     
-    # Clear the scene
-    clear_scene()
-    
-    # Setup scene
-    scene = setup_scene()
-    scene.render.filepath = render_path
-    
-    # Create camera
-    camera = create_camera()
-    
-    # Setup randomized lighting using the image index as seed
-    setup_lighting(seed=index+100)  # Use different seed range from object positioning
-    
-    # Create objects with randomized positions
-    # Use the image number as a seed for reproducibility
-    objects = create_objects(num_objects=7, distribution_seed=index)
-    
-    # Calculate bounding boxes
-    bounding_boxes = calculate_bounding_boxes(scene, camera, objects)
-    
-    # Save bounding boxes in YOLO format
-    save_yolo_format(bounding_boxes, bbox_path)
-    
-    # Render the scene
-    bpy.ops.render.render(write_still=True)
-    
-    # Visualize and test the bounding boxes
-    visualize_bounding_boxes(render_path, bbox_path, visualization_path)
-    
-    print(f"Image {index+1} rendered to: {render_path}")
-    print(f"Labels saved to: {bbox_path}") 
+    try:
+        # Clear the scene
+        clear_scene()
+        
+        # Setup scene
+        scene = setup_scene()
+        scene.render.filepath = render_path
+        
+        # Create camera
+        camera = create_camera()
+        
+        # Setup randomized lighting using the image index as seed
+        setup_lighting(seed=index+100)
+        
+        # Import or create objects
+        if custom_model_path:
+            print("Using custom model path...")
+            try:
+                # Get file extension
+                file_ext = os.path.splitext(custom_model_path)[1].lower()
+                print(f"File extension: {file_ext}")
+                
+                # Import custom model
+                if file_ext == '.obj':
+                    print("Importing OBJ file...")
+                    if hasattr(bpy.ops.wm, 'obj_import'):
+                        bpy.ops.wm.obj_import(filepath=custom_model_path)
+                    else:
+                        bpy.ops.import_scene.obj(filepath=custom_model_path)
+                elif file_ext == '.fbx':
+                    print("Importing FBX file...")
+                    if hasattr(bpy.ops.wm, 'fbx_import'):
+                        bpy.ops.wm.fbx_import(filepath=custom_model_path)
+                    else:
+                        bpy.ops.import_scene.fbx(filepath=custom_model_path)
+                elif file_ext == '.blend':
+                    print("Importing Blend file...")
+                    bpy.ops.wm.append(filepath=custom_model_path)
+                else:
+                    raise ValueError(f"Unsupported file format: {file_ext}")
+                
+                # Find the imported mesh objects
+                mesh_objects = [obj for obj in bpy.data.objects if obj.type == 'MESH']
+                if not mesh_objects:
+                    raise ValueError("No mesh objects found after import")
+                
+                # Set up the first mesh object
+                obj = mesh_objects[0]
+                obj['class_idx'] = 0
+                
+                # Scale and position the object
+                dims = obj.dimensions
+                max_dim = max(dims)
+                if max_dim > 0:
+                    scale_factor = 5.0 / max_dim
+                    obj.scale = (scale_factor, scale_factor, scale_factor)
+                    
+                    # Reset all rotations first
+                    obj.rotation_euler = (0, 0, 0)
+
+                    # Update the scene to apply rotation
+                    bpy.context.view_layer.update()
+                    
+                    # Position slightly above ground after rotation
+                    obj.location = (0, 0, 2)
+                    
+                    print(f"Adjusted object scale to {scale_factor}, rotated 90 degrees on X, Y, and Z axes, and positioned at height 2")
+                else:
+                    print("Warning: Object has zero dimensions")
+                
+            except Exception as e:
+                print(f"Error importing custom model: {str(e)}")
+                raise
+        else:
+            print("No custom model path provided, creating random objects...")
+            create_objects(num_objects=7, distribution_seed=index)
+        
+        # Get fresh list of objects for bounding box calculation
+        current_objects = [obj for obj in bpy.data.objects if obj.type == 'MESH']
+        if not current_objects:
+            raise ValueError("No valid objects found for bounding box calculation")
+        
+        # Calculate bounding boxes
+        bounding_boxes = calculate_bounding_boxes(scene, camera, current_objects)
+        
+        # Save bounding boxes in YOLO format
+        save_yolo_format(bounding_boxes, bbox_path)
+        
+        # Render the scene
+        bpy.ops.render.render(write_still=True)
+        
+        # Visualize and test the bounding boxes
+        if os.path.exists(render_path) and os.path.exists(bbox_path):
+            visualize_bounding_boxes(render_path, bbox_path, visualization_path)
+        
+        print(f"Image {index+1} rendered to: {render_path}")
+        print(f"Labels saved to: {bbox_path}")
+        
+    except Exception as e:
+        print(f"Error in generate_single_image: {str(e)}")
+        raise
+    finally:
+        # Always try to clean up
+        try:
+            clear_scene()
+        except:
+            pass 
