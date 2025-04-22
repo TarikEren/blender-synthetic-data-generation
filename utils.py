@@ -8,6 +8,7 @@ rendering them, calculating their 2D bounding boxes, and exporting them in YOLO 
 #------------------------------------------------------------------------------
 # IMPORTS
 #------------------------------------------------------------------------------
+from glob import iglob
 import bpy
 import numpy as np
 import os
@@ -15,6 +16,7 @@ import math
 from mathutils import Vector # type: ignore
 import cv2
 import random
+from pathlib import Path
 
 #------------------------------------------------------------------------------
 # SCENE SETUP AND MANAGEMENT
@@ -428,6 +430,10 @@ def calculate_bounding_boxes(scene, camera, objects):
     res_y = render.resolution_y
     
     for obj in objects:
+        # Skip the ground plane
+        if obj.name == "Plane":
+            continue
+            
         # Get the 8 corners of the object's bounding box in world space
         bbox_corners = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
         
@@ -545,6 +551,32 @@ def visualize_bounding_boxes(image_path, bbox_file, output_path):
 #------------------------------------------------------------------------------
 # IMAGE GENERATION
 #------------------------------------------------------------------------------
+def find_textures(path: str) -> list[str]:
+    """Find all texture files in the given directory and its subdirectories.
+    
+    Args:
+        path: Root directory to search for textures
+        
+    Returns:
+        List of paths to texture files
+    """
+    texture_files = []
+    texture_extensions = ['.blend']  # Focus on .blend files for now
+    
+    # Walk through the directory and its subdirectories
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            # Check if file has a texture extension
+            if any(file.lower().endswith(ext) for ext in texture_extensions):
+                # Get the full path to the texture file
+                texture_path = os.path.join(root, file)
+                # Convert to absolute path
+                texture_path = os.path.abspath(texture_path)
+                texture_files.append(texture_path)
+    
+    return texture_files
+
+
 def import_custom_model(model_path):
     """Import a custom 3D model into the scene."""
     print(f"\nAttempting to import model from: {model_path}")
@@ -644,6 +676,75 @@ def import_custom_model(model_path):
         print(f"Error during model import: {str(e)}")
         raise
 
+def create_textured_plane(texture_path=None):
+    """Create a large plane with optional texture.
+    
+    Args:
+        texture_path: Path to the texture file (.blend)
+    """
+    # Create a large plane
+    bpy.ops.mesh.primitive_plane_add(size=100, location=(0, 0, 0))
+    plane = bpy.context.active_object
+    
+    # Create material
+    mat = bpy.data.materials.new(name="Ground_Material")
+    mat.use_nodes = True
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+    
+    # Clear existing nodes
+    nodes.clear()
+    
+    # Create nodes for texture setup
+    material_output = nodes.new('ShaderNodeOutputMaterial')
+    principled_bsdf = nodes.new('ShaderNodeBsdfPrincipled')
+    tex_coord = nodes.new('ShaderNodeTexCoord')
+    mapping = nodes.new('ShaderNodeMapping')
+    
+    # Link Principled BSDF to Material Output
+    links.new(principled_bsdf.outputs['BSDF'], material_output.inputs['Surface'])
+    
+    if texture_path and os.path.exists(texture_path):
+        try:
+            # Append the material from the .blend file
+            with bpy.data.libraries.load(texture_path) as (data_from, data_to):
+                # Find material names in the .blend file
+                material_names = [name for name in data_from.materials]
+                if material_names:
+                    # Load the first material found
+                    data_to.materials = [material_names[0]]
+            
+            if data_to.materials and data_to.materials[0] is not None:
+                # Use the loaded material instead of creating a new one
+                imported_mat = data_to.materials[0]
+                
+                # Assign the imported material to the plane
+                if plane.data.materials:
+                    plane.data.materials[0] = imported_mat
+                else:
+                    plane.data.materials.append(imported_mat)
+                
+                print(f"Successfully applied material from: {texture_path}")
+                return plane
+            
+            raise Exception("No valid materials found in the .blend file")
+            
+        except Exception as e:
+            print(f"Error applying material from .blend file: {str(e)}")
+            # Fallback to default material if texture fails
+            principled_bsdf.inputs[0].default_value = (0.8, 0.8, 0.8, 1)  # Gray
+    else:
+        # Default gray material if no texture
+        principled_bsdf.inputs[0].default_value = (0.8, 0.8, 0.8, 1)  # Gray
+    
+    # Assign material to plane (only if we didn't successfully import a material)
+    if plane.data.materials:
+        plane.data.materials[0] = mat
+    else:
+        plane.data.materials.append(mat)
+    
+    return plane
+
 def generate_single_image(index, images_dir, labels_dir, custom_model_path=None):
     """Generate a single image with bounding boxes."""
     print(f"\nGenerating image {index+1}")
@@ -683,6 +784,19 @@ def generate_single_image(index, images_dir, labels_dir, custom_model_path=None)
         # Setup randomized lighting using the image index as seed
         setup_lighting(seed=index+100)
         
+        # Get list of available textures
+        texture_files = find_textures("./textures")
+        print(f"INFO: Found {len(texture_files)} texture files")
+
+        # Randomly select a texture if available
+        texture_path = None
+        if texture_files:
+            texture_path = random.choice(texture_files)
+            print(f"Using texture: {texture_path}")
+        
+        # Create textured plane
+        create_textured_plane(texture_path)
+        
         # Import or create objects
         if custom_model_path:
             print("Using custom model path...")
@@ -719,7 +833,7 @@ def generate_single_image(index, images_dir, labels_dir, custom_model_path=None)
                 obj = mesh_objects[0]
                 obj['class_idx'] = 0
                 
-                # Scale and position the object
+                # Scale the object
                 dims = obj.dimensions
                 max_dim = max(dims)
                 if max_dim > 0:
@@ -728,14 +842,28 @@ def generate_single_image(index, images_dir, labels_dir, custom_model_path=None)
                     
                     # Reset all rotations first
                     obj.rotation_euler = (0, 0, 0)
-
-                    # Update the scene to apply rotation
+                    
+                    # Add random position and rotation for this frame
+                    # Random position within -10 to 10 on x and y axes
+                    obj.location = (
+                        random.uniform(-10, 10),    # x position
+                        random.uniform(-10, 10),    # y position
+                        random.uniform(1, 5)        # z position (height)
+                    )
+                    
+                    # Random rotation around X axis (0 to 360 degrees)
+                    obj.rotation_euler = (
+                        0,                      # x rotation
+                        0,                      # y rotation
+                        random.uniform(0, 360)  # z rotation
+                    )
+                    
+                    # Update the scene to apply transformations
                     bpy.context.view_layer.update()
                     
-                    # Position slightly above ground after rotation
-                    obj.location = (0, 0, 2)
-                    
-                    print(f"Adjusted object scale to {scale_factor}, rotated 90 degrees on X, Y, and Z axes, and positioned at height 2")
+                    print(f"Adjusted object scale to {scale_factor}")
+                    print(f"Set random position: {obj.location}")
+                    print(f"Set random X rotation: {math.degrees(obj.rotation_euler[0]):.2f} degrees")
                 else:
                     print("Warning: Object has zero dimensions")
                 
