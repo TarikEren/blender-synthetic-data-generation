@@ -51,8 +51,9 @@ blender --background --python main.py
 
 ### Command-line Arguments
 
-- `--num-images`: Number of images to generate (default: 10)
-- `--output-dir`: Directory to save output (default: script directory)
+- `--num-images`    : Number of images to generate (default: 10)
+- `--custom-model`  : Path to a custom model to be used
+- `--output-dir`    : Directory to save output (default: script directory)
 
 ### Output
 
@@ -71,11 +72,6 @@ The bounding box format used is:
 
 Where:
 - `class_id` is an integer (0-4) representing the object type:
-  - 0: Cube
-  - 1: Sphere
-  - 2: Cone
-  - 3: Cylinder
-  - 4: Torus
 - All other values are normalized to [0,1]
 - (0,0) is the top-left corner of the image
 
