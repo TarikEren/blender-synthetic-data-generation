@@ -9,13 +9,15 @@ import os
 import sys
 import argparse
 import logging
-import logging
 import bpy
 
 # Adding the current directory to Python's module search path
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.append(current_dir)
+
+from config import general_config
+from utils import generate_single_image, add_run_separator
 
 # Configure logging
 logging.basicConfig(
@@ -28,14 +30,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-from utils import add_run_separator
-
 # Add initial separator for this run
 logger.info(add_run_separator())
 
 
-from config import general_config
-from utils import generate_single_image
 
 def main(num_images=1, output_dir=None, custom_model_path=None):
     """Main function to run the entire pipeline."""
