@@ -823,6 +823,7 @@ def generate_single_image(index, images_dir, labels_dir, custom_model_path=None)
     # Convert relative paths to absolute paths
     images_dir_abs = os.path.abspath(images_dir)
     labels_dir_abs = os.path.abspath(labels_dir)
+    visualization_dir_abs = os.path.abspath(images_dir_abs + "/vis")
     
     if custom_model_path:
         custom_model_abs = os.path.abspath(custom_model_path)
@@ -838,7 +839,7 @@ def generate_single_image(index, images_dir, labels_dir, custom_model_path=None)
     label_filename = f"image_{index:03d}.txt"
     render_path = os.path.join(images_dir_abs, image_filename)
     bbox_path = os.path.join(labels_dir_abs, label_filename)
-    visualization_path = os.path.join(images_dir_abs, f"vis_{index:03d}.png")
+    visualization_path = os.path.join(visualization_dir_abs, f"vis_{index:03d}.png")
     
     try:
         # Clear the scene
