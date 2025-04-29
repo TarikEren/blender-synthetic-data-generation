@@ -9,6 +9,7 @@ import os
 import sys
 import argparse
 import logging
+import logging
 import bpy
 
 # Adding the current directory to Python's module search path

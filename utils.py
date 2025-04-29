@@ -15,6 +15,8 @@ import math
 import random
 import logging
 import datetime
+import logging
+import datetime
 
 from config import general_config, scene_config, camera_config, object_config, class_config
 
