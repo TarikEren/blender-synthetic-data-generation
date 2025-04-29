@@ -13,10 +13,25 @@ import bpy
 import cv2
 import math
 import random
+import logging
+import datetime
 
 from config import general_config, scene_config, camera_config, object_config, class_config
 
 from mathutils import Vector # type: ignore
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+#------------------------------------------------------------------------------
+# LOGGER UTILS
+#------------------------------------------------------------------------------
+def add_run_separator():
+    """Add a visual separator to the log file to distinguish between different program runs."""
+    separator = "=" * 40
+    run_header = " New Execution "
+    return separator + run_header + separator
+
 
 #------------------------------------------------------------------------------
 # SCENE SETUP AND MANAGEMENT
@@ -50,10 +65,10 @@ def setup_scene():
     prefs = bpy.context.preferences
     cuda_prefs = prefs.addons['cycles'].preferences
     
-    # Print available devices for debugging
-    print("\nAvailable Devices:")
+    # Log available devices
+    logger.debug("Available Devices:")
     for device in cuda_prefs.devices:
-        print(f"Device: {device.name}, Type: {device.type}, Use: {device.use}")
+        logger.debug(f"Device: {device.name}, Type: {device.type}, Use: {device.use}")
     
     # Force CUDA compute type and refresh devices
     cuda_prefs.compute_device_type = 'CUDA'
@@ -63,7 +78,7 @@ def setup_scene():
     for device in cuda_prefs.devices:
         if device.type == 'CUDA':
             device.use = True
-            print(f"Enabled CUDA device: {device.name}")
+            logger.debug(f"Enabled CUDA device: {device.name}")
     
     # Set render settings for faster preview
     scene.render.resolution_x = general_config["x_resolution"]
@@ -86,13 +101,13 @@ def setup_scene():
     # Force GPU compute
     scene.cycles.feature_set = 'EXPERIMENTAL'
     
-    # Print render settings for verification
-    print("\nRender Settings:")
-    print(f"Device: {scene.cycles.device}")
-    print(f"Tile Size: {scene.cycles.tile_size}")
-    print(f"Samples: {scene.cycles.samples}")
-    print(f"Denoising: {scene.cycles.use_denoising}")
-    print(f"Feature Set: {scene.cycles.feature_set}")
+    # Log render settings for verification
+    logger.debug("==== Render Settings ====")
+    logger.debug(f"Device: {scene.cycles.device}")
+    logger.debug(f"Tile Size: {scene.cycles.tile_size}")
+    logger.debug(f"Samples: {scene.cycles.samples}")
+    logger.debug(f"Denoising: {scene.cycles.use_denoising}")
+    logger.debug(f"Feature Set: {scene.cycles.feature_set}")
     
     # Adjust world settings (simple white background)
     world = bpy.data.worlds['World']
@@ -517,7 +532,7 @@ def save_yolo_format(bounding_boxes, output_path):
         for box in bounding_boxes:
             # YOLO format: class_idx x_center y_center width height
             # All values are normalized to [0,1]
-            f.write(f"{box['class_idx']} {box['x_center']:.6f} {box['y_center']:.6f} {box['width']:.6f} {box['height']:.6f}\n")
+            f.write(f"{box['class_idx']} {box['x_center']:.6f} {box['y_center']:.6f} {box['width']:.6f} {box['height']:.6f}")
 
 #------------------------------------------------------------------------------
 # VISUALIZATION
@@ -599,14 +614,14 @@ def find_textures(path: str) -> list[str]:
 
 def import_custom_model(model_path):
     """Import a custom 3D model into the scene."""
-    print(f"\nAttempting to import model from: {model_path}")
+    logger.info(f"Attempting to import model from: {model_path}")
     
     # Clear the scene first
     clear_scene()
     
     # Import the model based on file extension
     file_ext = os.path.splitext(model_path)[1].lower()
-    print(f"File extension: {file_ext}")
+    logger.debug(f"File extension: {file_ext}")
     
     try:
         # Store the current object names
@@ -614,7 +629,7 @@ def import_custom_model(model_path):
         
         # Import based on file type
         if file_ext == '.obj':
-            print("Importing OBJ file...")
+            logger.info("Importing OBJ file...")
             try:
                 # First try the new method (Blender 4.x)
                 if hasattr(bpy.ops.wm, 'obj_import'):
@@ -625,30 +640,30 @@ def import_custom_model(model_path):
                 else:
                     raise ImportError("No OBJ import operator found")
             except Exception as e:
-                print(f"Import error: {str(e)}")
+                logger.error(f"Import error: {str(e)}")
                 raise
         elif file_ext == '.fbx':
-            print("Importing FBX file...")
+            logger.info("Importing FBX file...")
             if hasattr(bpy.ops.wm, 'fbx_import'):
                 bpy.ops.wm.fbx_import(filepath=model_path)
             else:
                 bpy.ops.import_scene.fbx(filepath=model_path)
         elif file_ext == '.blend':
-            print("Importing Blend file...")
+            logger.info("Importing Blend file...")
             bpy.ops.wm.append(filepath=model_path)
         else:
             raise ValueError(f"Unsupported file format: {file_ext}")
         
         # Find newly added objects
         new_objects = [obj for obj in bpy.data.objects if obj.name not in existing_objects]
-        print(f"New objects after import: {new_objects}")
+        logger.debug(f"New objects after import: {new_objects}")
         
         if not new_objects:
             raise ValueError("No new objects were imported")
             
         # Get the main imported object (usually the first one)
         imported_obj = new_objects[0]
-        print(f"Using imported object: {imported_obj.name}")
+        logger.info(f"Using imported object: {imported_obj.name}")
         
         # Store the object's name for later reference
         obj_name = imported_obj.name
@@ -680,17 +695,17 @@ def import_custom_model(model_path):
             # Position slightly above ground after rotation
             obj.location = (0, 0, 2)
             
-            print(f"Adjusted object scale to {scale_factor}, rotated 90 degrees on X, Y, and Z axes, and positioned at height 2")
+            logger.info(f"Adjusted object scale to {scale_factor}, rotated 90 degrees on X, Y, and Z axes, and positioned at height 2")
 
             
         except Exception as e:
-            print(f"Warning: Error during object adjustment: {str(e)}")
-            print("Continuing with unadjusted object...")
+            logger.warning(f"Error during object adjustment: {str(e)}")
+            logger.warning("Continuing with unadjusted object...")
         
         return obj_name  # Return the name instead of the object reference
         
     except Exception as e:
-        print(f"Error during model import: {str(e)}")
+        logger.error(f"Error during model import: {str(e)}")
         raise
 
 def create_textured_plane(texture_path=None):
@@ -753,14 +768,14 @@ def create_textured_plane(texture_path=None):
                         else:
                             plane.data.materials.append(imported_mat)
                         
-                        print(f"Successfully applied material from: {texture_path}")
+                        logger.info(f"Successfully applied material from: {texture_path}")
                         planes.append(plane)
                         continue
                     
                     raise Exception("No valid materials found in the .blend file")
                     
                 except Exception as e:
-                    print(f"Error applying material from .blend file: {str(e)}")
+                    logger.error(f"Error applying material from .blend file: {str(e)}")
                     # Fallback to default material if texture fails
                     principled_bsdf.inputs[0].default_value = object_config["default_colour"]
             else:
@@ -822,8 +837,8 @@ def find_valid_position(existing_objects,
 
 def generate_single_image(index, images_dir, labels_dir, custom_model_path=None):
     """Generate a single image with bounding boxes."""
-    print(f"\nGenerating image {index+1}")
-    print(f"Custom model path: {custom_model_path}")
+    logger.info(f"Generating image {index+1}")
+    logger.info(f"Custom model path: {custom_model_path}")
     
     # Convert relative paths to absolute paths
     images_dir_abs = os.path.abspath(images_dir)
@@ -832,8 +847,8 @@ def generate_single_image(index, images_dir, labels_dir, custom_model_path=None)
     
     if custom_model_path:
         custom_model_abs = os.path.abspath(custom_model_path)
-        print(f"Absolute custom model path: {custom_model_abs}")
-        print(f"Custom model file exists: {os.path.exists(custom_model_abs)}")
+        logger.debug(f"Absolute custom model path: {custom_model_abs}")
+        logger.debug(f"Custom model file exists: {os.path.exists(custom_model_abs)}")
     
     # Create directories if they don't exist
     os.makedirs(images_dir_abs, exist_ok=True)
@@ -862,28 +877,28 @@ def generate_single_image(index, images_dir, labels_dir, custom_model_path=None)
         
         # Get list of available textures
         texture_files = find_textures("./textures")
-        print(f"INFO: Found {len(texture_files)} texture files")
+        logger.info(f"Found {len(texture_files)} texture files")
         
         # Randomly select a texture if available
         texture_path = None
         if texture_files:
             texture_path = random.choice(texture_files)
-            print(f"Using texture: {texture_path}")
+            logger.info(f"Using texture: {texture_path}")
         
         # Create textured plane
         create_textured_plane(texture_path)
         
         # Import or create objects
         if custom_model_path:
-            print("Using custom model path...")
+            logger.info("Using custom model path...")
             try:
                 # Get file extension
                 file_ext = os.path.splitext(custom_model_path)[1].lower()
-                print(f"File extension: {file_ext}")
+                logger.debug(f"File extension: {file_ext}")
                 
                 # Determine number of models to create (1-10)
                 num_models = random.randint(1, 10)
-                print(f"Creating {num_models} instances of the model")
+                logger.info(f"Creating {num_models} instances of the model")
                 
                 # Create a list to store all imported objects
                 imported_objects = []
@@ -891,19 +906,19 @@ def generate_single_image(index, images_dir, labels_dir, custom_model_path=None)
                 for i in range(num_models):
                     # Import custom model
                     if file_ext == '.obj':
-                        print(f"Importing OBJ file {i+1}...")
+                        logger.info(f"Importing OBJ file {i+1}...")
                         if hasattr(bpy.ops.wm, 'obj_import'):
                             bpy.ops.wm.obj_import(filepath=custom_model_path)
                         else:
                             bpy.ops.import_scene.obj(filepath=custom_model_path)
                     elif file_ext == '.fbx':
-                        print(f"Importing FBX file {i+1}...")
+                        logger.info(f"Importing FBX file {i+1}...")
                         if hasattr(bpy.ops.wm, 'fbx_import'):
                             bpy.ops.wm.fbx_import(filepath=custom_model_path)
                         else:
                             bpy.ops.import_scene.fbx(filepath=custom_model_path)
                     elif file_ext == '.blend':
-                        print(f"Importing Blend file {i+1}...")
+                        logger.info(f"Importing Blend file {i+1}...")
                         bpy.ops.wm.append(filepath=custom_model_path)
                     else:
                         raise ValueError(f"Unsupported file format: {file_ext}")
@@ -938,7 +953,7 @@ def generate_single_image(index, images_dir, labels_dir, custom_model_path=None)
                         # Find a valid position that doesn't collide with existing objects
                         position = find_valid_position(imported_objects)
                         if position is None:
-                            print(f"Warning: Could not find valid position for object {i+1}, skipping...")
+                            logger.warning(f"Could not find valid position for object {i+1}, skipping...")
                             bpy.data.objects.remove(obj)
                             continue
                         
@@ -955,19 +970,19 @@ def generate_single_image(index, images_dir, labels_dir, custom_model_path=None)
                         # Update the scene to apply transformations
                         bpy.context.view_layer.update()
                         
-                        print(f"Adjusted object {i+1} scale to {scale_factor} (variation: {scale_variation})")
-                        print(f"Set position: {obj.location}")
-                        print(f"Set random rotation: {obj.rotation_euler}")
+                        logger.debug(f"Adjusted object {i+1} scale to {scale_factor} (variation: {scale_variation})")
+                        logger.debug(f"Set position: {obj.location}")
+                        logger.debug(f"Set random rotation: {obj.rotation_euler}")
                     else:
-                        print(f"Warning: Object {i+1} has zero dimensions")
+                        logger.warning(f"Object {i+1} has zero dimensions")
                     
                     imported_objects.append(obj)
                 
             except Exception as e:
-                print(f"Error importing custom model: {str(e)}")
+                logger.error(f"Error importing custom model: {str(e)}")
                 raise
         else:
-            print("No custom model path provided, creating random objects...")
+            logger.info("No custom model path provided, creating random objects...")
             create_objects(num_objects=7, distribution_seed=index)
         
         # Get fresh list of objects for bounding box calculation
@@ -988,11 +1003,11 @@ def generate_single_image(index, images_dir, labels_dir, custom_model_path=None)
         if os.path.exists(render_path) and os.path.exists(bbox_path):
             visualize_bounding_boxes(render_path, bbox_path, visualization_path)
         
-        print(f"Image {index+1} rendered to: {render_path}")
-        print(f"Labels saved to: {bbox_path}")
+        logger.info(f"Image {index+1} rendered to: {render_path}")
+        logger.info(f"Labels saved to: {bbox_path}")
         
     except Exception as e:
-        print(f"Error in generate_single_image: {str(e)}")
+        logger.error(f"Error in generate_single_image: {str(e)}")
         raise
     finally:
         # Always try to clean up
