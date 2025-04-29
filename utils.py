@@ -8,15 +8,15 @@ rendering them, calculating their 2D bounding boxes, and exporting them in YOLO 
 #------------------------------------------------------------------------------
 # IMPORTS
 #------------------------------------------------------------------------------
-from glob import iglob
-import bpy
-import numpy as np
 import os
-import math
-from mathutils import Vector # type: ignore
+import bpy
 import cv2
+import math
 import random
-from pathlib import Path
+
+from config import general_config, scene_config, camera_config, object_config, class_config
+
+from mathutils import Vector # type: ignore
 
 #------------------------------------------------------------------------------
 # SCENE SETUP AND MANAGEMENT
@@ -66,27 +66,25 @@ def setup_scene():
             print(f"Enabled CUDA device: {device.name}")
     
     # Set render settings for faster preview
-    scene.render.resolution_x = 1920
-    scene.render.resolution_y = 1080
-    scene.render.resolution_percentage = 100
+    scene.render.resolution_x = general_config["x_resolution"]
+    scene.render.resolution_y = general_config["y_resolution"]
+    scene.render.resolution_percentage = general_config["resolution_percentage"]
     scene.render.filepath = '//rendered_image.png'
     
     # Optimize render settings for GPU
     scene.cycles.device = 'GPU'
-    scene.cycles.tile_size = 256  # Larger tile size for GPU
-    scene.cycles.samples = 128    # Reduced samples for faster preview
-    scene.cycles.use_denoising = True  # Enable denoising for cleaner results
+    scene.cycles.tile_size = general_config["tile_size"]            # Larger tile size for GPU
+    scene.cycles.samples = general_config["sample_count"]           # Reduced samples for faster preview
+    scene.cycles.use_denoising = general_config["use_denoising"]    # Enable denoising for cleaner results
     
     # Additional GPU optimizations
-    scene.cycles.use_adaptive_sampling = True
-    scene.cycles.adaptive_threshold = 0.01
-    scene.cycles.adaptive_min_samples = 64
-    scene.cycles.use_denoising_prefilter = True
+    scene.cycles.use_adaptive_sampling = general_config["use_adaptive_sampling"]
+    scene.cycles.adaptive_threshold = general_config["adaptive_threshold"]
+    scene.cycles.adaptive_min_samples = general_config["adaptive_min_samples"]
+    scene.cycles.use_denoising_prefilter = general_config["use_denoising_prefilter"]
     
     # Force GPU compute
     scene.cycles.feature_set = 'EXPERIMENTAL'
-    scene.cycles.use_denoising_prefilter = True
-    scene.cycles.use_denoising_denoising = True
     
     # Print render settings for verification
     print("\nRender Settings:")
@@ -100,8 +98,8 @@ def setup_scene():
     world = bpy.data.worlds['World']
     world.use_nodes = True
     bg_node = world.node_tree.nodes['Background']
-    bg_node.inputs[0].default_value = (1, 1, 1, 1)  # White background
-    bg_node.inputs[1].default_value = 1.0  # Strength
+    bg_node.inputs[0].default_value = scene_config["background_default_colour"]
+    bg_node.inputs[1].default_value = scene_config["background_default_colour_strength"]
     
     return scene
 
@@ -110,8 +108,7 @@ def setup_scene():
 #------------------------------------------------------------------------------
 def create_camera():
     """Create a camera positioned above the scene looking down."""
-    camera_height = 90    
-    bpy.ops.object.camera_add(location=(0, 0, camera_height))
+    bpy.ops.object.camera_add(location=(0, 0, scene_config["camera_height"]))
     camera = bpy.context.active_object
     
     # Point camera straight down (negative Z-axis)
@@ -119,9 +116,9 @@ def create_camera():
     
     # Set camera parameters
     camera_data = camera.data
-    camera_data.lens = 35  # Focal length in mm
-    camera_data.clip_start = 0.1
-    camera_data.clip_end = camera_height * 2  # Set clip end to twice the camera height
+    camera_data.lens = camera_config["focal_length"]  # Focal length in mm
+    camera_data.clip_start = camera_config["clip_start"]
+    camera_data.clip_end = camera_config["clip_end"]  # Set clip end to twice the camera height
     
     # Set this camera as the active/scene camera
     bpy.context.scene.camera = camera
@@ -140,9 +137,11 @@ def setup_lighting(seed=None):
     for obj in bpy.data.objects:
         if obj.type == 'LIGHT':
             bpy.data.objects.remove(obj)
-    
+
+    lighting_types = ['three_point', 'studio', 'outdoor', 'dramatic']
+
     # Determine lighting style for this scene
-    lighting_style = random.choice(['three_point', 'studio', 'outdoor', 'dramatic'])
+    lighting_style = random.choice(lighting_types)
     
     if lighting_style == 'three_point':
         # Key light (main light)
@@ -234,9 +233,14 @@ def create_objects(num_objects=5, distribution_seed=None):
     
     # Determine positioning strategy for this batch
     # Sometimes cluster objects, sometimes spread them out
-    spread_factor = random.uniform(0.6, 1.0)  # How spread out objects are (1.0 = full spread)
-    x_center_offset = random.uniform(-5, 5)   # Shift the center of distribution
-    y_center_offset = random.uniform(-5, 5)
+    spread_factor = random.uniform(object_config["spread_factor_range"][0],
+                                   object_config["spread_factor_range"][1])  
+
+    x_center_offset = random.uniform(object_config["x_center_offset_range"][0],
+                                     object_config["x_center_offset_range"][1])
+    
+    y_center_offset = random.uniform(object_config["y_center_offset_range"][0],
+                                     object_config["y_center_offset_range"][1])
     
     # Helper function to check collision with existing objects
     def is_colliding(position, obj_type, existing_objects):
@@ -277,7 +281,7 @@ def create_objects(num_objects=5, distribution_seed=None):
     
     for i in range(num_objects):
         # Try to find a non-colliding position
-        max_attempts = 50
+        max_attempts = general_config["max_collision_check_amount"]
         attempt = 0
         colliding = True
         
@@ -289,9 +293,12 @@ def create_objects(num_objects=5, distribution_seed=None):
         # Keep trying until we find a non-colliding position
         while colliding and attempt < max_attempts:
             # Randomly position within visible area with the custom distribution
-            x = random.uniform(-10, 10) * spread_factor + x_center_offset
-            y = random.uniform(-10, 10) * spread_factor + y_center_offset
-            z = random.uniform(0, 3)  # Height above ground
+            x = random.uniform(object_config["random_x_range"][0],
+                               object_config["random_x_range"][1]) * spread_factor + x_center_offset
+            y = random.uniform(object_config["random_y_range"][0],
+                               object_config["random_y_range"][1]) * spread_factor + y_center_offset
+            z = random.uniform(object_config["random_z_range"][0],
+                               object_config["random_z_range"][1])  # Height above ground
             
             # Check if this position would collide with existing objects
             colliding = is_colliding((x, y, z), obj_type, objects)
@@ -324,9 +331,12 @@ def create_objects(num_objects=5, distribution_seed=None):
         
         # Add random rotation
         obj.rotation_euler = (
-            random.uniform(0, 3.14),
-            random.uniform(0, 3.14),
-            random.uniform(0, 3.14)
+            random.uniform(object_config["random_rotation_range"][0],
+                           object_config["random_rotation_range"][0]),      # x rotation
+            random.uniform(object_config["random_rotation_range"][0],
+                           object_config["random_rotation_range"][0]),      # y rotation
+            random.uniform(object_config["random_rotation_range"][0],
+                           object_config["random_rotation_range"][0]),      # z rotation
         )
         
         # Create a random colored material
@@ -335,10 +345,10 @@ def create_objects(num_objects=5, distribution_seed=None):
         principled_bsdf = mat.node_tree.nodes.get('Principled BSDF')
         if principled_bsdf:
             principled_bsdf.inputs[0].default_value = (
-                random.uniform(0.1, 1),
-                random.uniform(0.1, 1),
-                random.uniform(0.1, 1),
-                1
+                random.uniform(0.1, 1),     # Red
+                random.uniform(0.1, 1),     # Green
+                random.uniform(0.1, 1),     # Blue
+                1                           # Alpha
             )
         
         # Assign material to object
@@ -350,7 +360,8 @@ def create_objects(num_objects=5, distribution_seed=None):
         objects.append(obj)
     
     # Create a plane for the ground
-    bpy.ops.mesh.primitive_plane_add(size=40, location=(0, 0, 0))
+    bpy.ops.mesh.primitive_plane_add(size=scene_config["ground_plane_size"],
+                                     location=(0, 0, 0))
     ground = bpy.context.active_object
     
     # Add a material to the ground
@@ -358,7 +369,11 @@ def create_objects(num_objects=5, distribution_seed=None):
     mat.use_nodes = True
     principled_bsdf = mat.node_tree.nodes.get('Principled BSDF')
     if principled_bsdf:
-        principled_bsdf.inputs[0].default_value = (0.8, 0.8, 0.8, 1)  # Gray
+        principled_bsdf.inputs[0].default_value = (
+            object_config["default_config"][0],
+            object_config["default_config"][1],
+            object_config["default_config"][2],
+            object_config["default_config"][3])
     
     # Assign material to ground
     if ground.data.materials:
@@ -526,13 +541,7 @@ def visualize_bounding_boxes(image_path, bbox_file, output_path):
         lines = f.readlines()
     
     # Colors for visualization
-    colors = [
-        (0, 0, 255),    # Red for class 0 (cube)
-        (0, 255, 0),    # Green for class 1 (sphere)
-        (255, 0, 0),    # Blue for class 2 (cone)
-        (255, 255, 0),  # Cyan for class 3 (cylinder)
-        (255, 0, 255)   # Magenta for class 4 (torus)
-    ]
+    colors = class_config["class_colours"]
     
     # Draw bounding boxes on the image
     for line in lines:
@@ -553,7 +562,7 @@ def visualize_bounding_boxes(image_path, bbox_file, output_path):
             # Draw rectangle and class label
             color = colors[class_idx % len(colors)]
             cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
-            cv2.putText(img, f"Class {class_idx}", (x1, y1 - 10), 
+            cv2.putText(img, class_config["classes"][class_idx], (x1, y1 - 10), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
     
     # Save annotated image
@@ -648,10 +657,11 @@ def import_custom_model(model_path):
             # Set a custom property to identify this as a custom model
             bpy.data.objects[obj_name]['class_idx'] = 0
             
-            denominator = random.randint(1, 20)
+            denominator = random.randint(object_config["denominator_range"][0],
+                                         object_config["denominator_range"][1])
             
             # Calculate scale to make largest dimension 5 units
-            scale_factor = 5.0 / denominator
+            scale_factor = object_config["max_scale"] / denominator
             
             # Scale and position the object
             obj = bpy.data.objects[obj_name]
@@ -690,10 +700,10 @@ def create_textured_plane(texture_path=None):
         texture_path: Path to the texture file (.blend)
     """
     planes = []
-    plane_size = 35  # Size of each individual plane
+    plane_size = scene_config["ground_plane_size"]  # Size of each individual plane
     spacing = plane_size  # Planes will touch perfectly
     
-    # Create 9 planes in a 3x3 grid
+    # Create a plane grid
     for i in range(3):
         for j in range(3):
             # Calculate position for this plane
@@ -752,10 +762,10 @@ def create_textured_plane(texture_path=None):
                 except Exception as e:
                     print(f"Error applying material from .blend file: {str(e)}")
                     # Fallback to default material if texture fails
-                    principled_bsdf.inputs[0].default_value = (0.8, 0.8, 0.8, 1)  # Gray
+                    principled_bsdf.inputs[0].default_value = object_config["default_colour"]
             else:
-                # Default gray material if no texture
-                principled_bsdf.inputs[0].default_value = (0.8, 0.8, 0.8, 1)  # Gray
+                # Fallback to default again
+                principled_bsdf.inputs[0].default_value = object_config["default_colour"]
             
             # Assign material to plane (only if we didn't successfully import a material)
             if plane.data.materials:
@@ -788,7 +798,8 @@ def is_colliding(position, existing_objects, min_distance=3.0):
             return True
     return False
 
-def find_valid_position(existing_objects, max_attempts=50):
+def find_valid_position(existing_objects, 
+                        max_attempts=general_config["max_collision_check_amount"]):
     """Find a valid position that doesn't collide with existing objects.
     
     Args:
@@ -817,7 +828,7 @@ def generate_single_image(index, images_dir, labels_dir, custom_model_path=None)
     # Convert relative paths to absolute paths
     images_dir_abs = os.path.abspath(images_dir)
     labels_dir_abs = os.path.abspath(labels_dir)
-    visualization_dir_abs = os.path.abspath(images_dir_abs + "/vis")
+    visualization_dir_abs = os.path.abspath(images_dir_abs + "/" + general_config["visualisation_dir"])
     
     if custom_model_path:
         custom_model_abs = os.path.abspath(custom_model_path)
@@ -911,10 +922,11 @@ def generate_single_image(index, images_dir, labels_dir, custom_model_path=None)
                     max_dim = max(dims)
                     if max_dim > 0:
                         # Base scale factor
-                        base_scale = 5.0 / max_dim
+                        base_scale = object_config["max_scale"] / max_dim
                         
                         # Random scale variation between 1 and 1.5
-                        scale_variation = random.uniform(1, 1.5)
+                        scale_variation = random.uniform(object_config["scale_variation_range"][0],
+                                                         object_config["scale_variation_range"][1])
                         
                         # Apply random scale
                         scale_factor = base_scale * scale_variation

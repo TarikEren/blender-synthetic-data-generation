@@ -6,14 +6,16 @@ calculates their 2D bounding boxes, and exports them in YOLO format.
 """
 
 import os
+import sys
 import argparse
 import bpy
-import sys
 
-# Add the current directory to Python's module search path
-sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+# Adding the current directory to Python's module search path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.append(current_dir)
 
-# Import the generate_single_image function from utils
+from config import general_config
 from utils import generate_single_image
 
 def main(num_images=1, output_dir=None, custom_model_path=None):
@@ -29,12 +31,12 @@ def main(num_images=1, output_dir=None, custom_model_path=None):
         
         # Setup directories
         if output_dir is None:
-            base_dir = os.path.dirname(bpy.data.filepath) or os.getcwd()
+            base_dir = os.getcwd()
         else:
             base_dir = output_dir
             
-        images_dir = os.path.join(base_dir, "images")
-        labels_dir = os.path.join(base_dir, "labels")
+        images_dir = os.path.join(base_dir, general_config["images_dir"])
+        labels_dir = os.path.join(base_dir, general_config["labels_dir"])
         
         # Create directories if they don't exist
         os.makedirs(images_dir, exist_ok=True)
