@@ -648,34 +648,30 @@ def import_custom_model(model_path):
             # Set a custom property to identify this as a custom model
             bpy.data.objects[obj_name]['class_idx'] = 0
             
-            # Get object dimensions before any changes
-            dims = bpy.data.objects[obj_name].dimensions.copy()
-            max_dim = max(dims)
+            denominator = random.randint(1, 20)
             
-            if max_dim > 0:  # Avoid division by zero
-                # Calculate scale to make largest dimension 5 units
-                scale_factor = 5.0 / max_dim
-                
-                # Scale and position the object
-                obj = bpy.data.objects[obj_name]
-                obj.scale = (scale_factor, scale_factor, scale_factor)
-                
-                # Reset all rotations first
-                obj.rotation_euler = (0, 0, 0)
-                
-                # Apply 90 degrees counter-clockwise rotation around all axes
-                # Note: math.pi/2 is 90 degrees
-                obj.rotation_euler = (math.pi/2, math.pi/2, math.pi/2)
-                
-                # Update the scene to apply rotation
-                bpy.context.view_layer.update()
-                
-                # Position slightly above ground after rotation
-                obj.location = (0, 0, 2)
-                
-                print(f"Adjusted object scale to {scale_factor}, rotated 90 degrees on X, Y, and Z axes, and positioned at height 2")
-            else:
-                print("Warning: Object has zero dimensions")
+            # Calculate scale to make largest dimension 5 units
+            scale_factor = 5.0 / denominator
+            
+            # Scale and position the object
+            obj = bpy.data.objects[obj_name]
+            obj.scale = (scale_factor, scale_factor, scale_factor)
+            
+            # Reset all rotations first
+            obj.rotation_euler = (0, 0, 0)
+            
+            # Apply 90 degrees counter-clockwise rotation around all axes
+            # Note: math.pi/2 is 90 degrees
+            obj.rotation_euler = (math.pi/2, math.pi/2, math.pi/2)
+            
+            # Update the scene to apply rotation
+            bpy.context.view_layer.update()
+            
+            # Position slightly above ground after rotation
+            obj.location = (0, 0, 2)
+            
+            print(f"Adjusted object scale to {scale_factor}, rotated 90 degrees on X, Y, and Z axes, and positioned at height 2")
+
             
         except Exception as e:
             print(f"Warning: Error during object adjustment: {str(e)}")
@@ -694,7 +690,7 @@ def create_textured_plane(texture_path=None):
         texture_path: Path to the texture file (.blend)
     """
     planes = []
-    plane_size = 30  # Size of each individual plane
+    plane_size = 35  # Size of each individual plane
     spacing = plane_size  # Planes will touch perfectly
     
     # Create 9 planes in a 3x3 grid
@@ -723,8 +719,6 @@ def create_textured_plane(texture_path=None):
             # Create nodes for texture setup
             material_output = nodes.new('ShaderNodeOutputMaterial')
             principled_bsdf = nodes.new('ShaderNodeBsdfPrincipled')
-            tex_coord = nodes.new('ShaderNodeTexCoord')
-            mapping = nodes.new('ShaderNodeMapping')
             
             # Link Principled BSDF to Material Output
             links.new(principled_bsdf.outputs['BSDF'], material_output.inputs['Surface'])
