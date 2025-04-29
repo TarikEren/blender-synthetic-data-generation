@@ -534,7 +534,7 @@ def save_yolo_format(bounding_boxes, output_path):
         for box in bounding_boxes:
             # YOLO format: class_idx x_center y_center width height
             # All values are normalized to [0,1]
-            f.write(f"{box['class_idx']} {box['x_center']:.6f} {box['y_center']:.6f} {box['width']:.6f} {box['height']:.6f}")
+            f.write(f"{box['class_idx']} {box['x_center']:.6f} {box['y_center']:.6f} {box['width']:.6f} {box['height']:.6f}\n")
 
 #------------------------------------------------------------------------------
 # VISUALIZATION
@@ -549,41 +549,73 @@ def visualize_bounding_boxes(image_path, bbox_file, output_path):
     """
     # Read the image
     img = cv2.imread(image_path)
-    
+    if img is None:
+        logger.error(f"Could not read image: {image_path}")
+        return
+        
     # Get image dimensions
     height, width, _ = img.shape
+    logger.debug(f"Image dimensions: {width}x{height}")
     
     # Read YOLO format bounding boxes
-    with open(bbox_file, 'r') as f:
-        lines = f.readlines()
+    try:
+        with open(bbox_file, 'r') as f:
+            lines = f.readlines()
+    except Exception as e:
+        logger.error(f"Error reading bbox file: {str(e)}")
+        return
+        
+    logger.debug(f"Found {len(lines)} bounding boxes to visualize")
     
-    # Colors for visualization
+    # Colors for visualization (BGR format)
     colors = class_config["class_colours"]
     
     # Draw bounding boxes on the image
     for line in lines:
         parts = line.strip().split()
         if len(parts) == 5:
-            class_idx = int(parts[0])
-            x_center = float(parts[1]) * width
-            y_center = float(parts[2]) * height
-            box_width = float(parts[3]) * width
-            box_height = float(parts[4]) * height
-            
-            # Calculate (x1, y1) and (x2, y2) coordinates
-            x1 = int(x_center - box_width / 2)
-            y1 = int(y_center - box_height / 2)
-            x2 = int(x_center + box_width / 2)
-            y2 = int(y_center + box_height / 2)
-            
-            # Draw rectangle and class label
-            color = colors[class_idx % len(colors)]
-            cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
-            cv2.putText(img, class_config["classes"][class_idx], (x1, y1 - 10), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
+            try:
+                class_idx = int(parts[0])
+                x_center = float(parts[1]) * width
+                y_center = float(parts[2]) * height
+                box_width = float(parts[3]) * width
+                box_height = float(parts[4]) * height
+                
+                # Calculate (x1, y1) and (x2, y2) coordinates
+                x1 = int(x_center - box_width / 2)
+                y1 = int(y_center - box_height / 2)
+                x2 = int(x_center + box_width / 2)
+                y2 = int(y_center + box_height / 2)
+                
+                # Ensure coordinates are within image bounds
+                x1 = max(0, min(x1, width))
+                y1 = max(0, min(y1, height))
+                x2 = max(0, min(x2, width))
+                y2 = max(0, min(y2, height))
+                
+                # Get color for this class
+                color = colors[class_idx % len(colors)]
+                
+                # Draw rectangle
+                cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
+                
+                # Draw class label
+                class_name = class_config["classes"][class_idx]
+                cv2.putText(img, class_name, (x1, y1 - 10), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
+                
+                logger.debug(f"Drew box for class {class_name} at ({x1}, {y1}) to ({x2}, {y2})")
+                
+            except Exception as e:
+                logger.error(f"Error processing bounding box line: {str(e)}")
+                continue
     
     # Save annotated image
-    cv2.imwrite(output_path, img)
+    try:
+        cv2.imwrite(output_path, img)
+        logger.info(f"Saved visualization to: {output_path}")
+    except Exception as e:
+        logger.error(f"Error saving visualization: {str(e)}")
 
 #------------------------------------------------------------------------------
 # IMAGE GENERATION
@@ -845,7 +877,7 @@ def generate_single_image(index, images_dir, labels_dir, custom_model_path=None)
     # Convert relative paths to absolute paths
     images_dir_abs = os.path.abspath(images_dir)
     labels_dir_abs = os.path.abspath(labels_dir)
-    visualization_dir_abs = os.path.abspath(images_dir_abs + "/" + general_config["visualisation_dir"])
+    visualization_dir_abs = os.path.join(images_dir_abs, general_config["visualisation_dir"])
     
     if custom_model_path:
         custom_model_abs = os.path.abspath(custom_model_path)
@@ -855,6 +887,7 @@ def generate_single_image(index, images_dir, labels_dir, custom_model_path=None)
     # Create directories if they don't exist
     os.makedirs(images_dir_abs, exist_ok=True)
     os.makedirs(labels_dir_abs, exist_ok=True)
+    os.makedirs(visualization_dir_abs, exist_ok=True)  # Create visualization directory
     
     # Set up filenames for this image
     image_filename = f"image_{index:03d}.png"
@@ -1003,7 +1036,16 @@ def generate_single_image(index, images_dir, labels_dir, custom_model_path=None)
         
         # Visualize and test the bounding boxes
         if os.path.exists(render_path) and os.path.exists(bbox_path):
+            logger.info(f"Creating visualization for image {index+1}")
+            logger.info(f"Render path exists: {os.path.exists(render_path)}")
+            logger.info(f"Bbox path exists: {os.path.exists(bbox_path)}")
+            logger.info(f"Visualization path: {visualization_path}")
             visualize_bounding_boxes(render_path, bbox_path, visualization_path)
+            logger.info(f"Visualization complete for image {index+1}")
+        else:
+            logger.warning(f"Could not create visualization - missing files:")
+            logger.warning(f"Render path exists: {os.path.exists(render_path)}")
+            logger.warning(f"Bbox path exists: {os.path.exists(bbox_path)}")
         
         logger.info(f"Image {index+1} rendered to: {render_path}")
         logger.info(f"Labels saved to: {bbox_path}")
