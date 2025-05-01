@@ -103,6 +103,30 @@ def setup_scene():
     # Force GPU compute
     scene.cycles.feature_set = 'EXPERIMENTAL'
     
+    # Configure grayscale output
+    scene.view_settings.view_transform = 'Standard'  # Use standard view transform
+    scene.view_settings.look = 'None'  # No color look
+    scene.view_settings.exposure = 0.0  # No exposure adjustment
+    scene.view_settings.gamma = 1.0  # No gamma adjustment
+    
+    # Add a compositor node setup for grayscale conversion
+    scene.use_nodes = True
+    tree = scene.node_tree
+    nodes = tree.nodes
+    
+    # Clear existing nodes
+    nodes.clear()
+    
+    # Create nodes
+    render_layers = nodes.new('CompositorNodeRLayers')
+    rgb_to_bw = nodes.new('CompositorNodeRGBToBW')
+    composite = nodes.new('CompositorNodeComposite')
+    
+    # Link nodes
+    links = tree.links
+    links.new(render_layers.outputs[0], rgb_to_bw.inputs[0])
+    links.new(rgb_to_bw.outputs[0], composite.inputs[0])
+    
     # Log render settings for verification
     logger.debug("==== Render Settings ====")
     logger.debug(f"Device: {scene.cycles.device}")
