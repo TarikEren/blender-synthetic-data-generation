@@ -6,3 +6,4 @@
 /images
 /labels
 *.log
+/blender_utils/__pycache__
