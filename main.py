@@ -17,7 +17,7 @@ if current_dir not in sys.path:
     sys.path.append(current_dir)
 
 from config import general_config
-from utils import generate_single_image, add_run_separator
+from blender_utils import generate_single_image, add_run_separator
 
 # Configure logging
 logging.basicConfig(
@@ -32,8 +32,6 @@ logger = logging.getLogger(__name__)
 
 # Add initial separator for this run
 logger.info(add_run_separator())
-
-
 
 def main(num_images=1, output_dir=None, custom_model_path=None):
     """Main function to run the entire pipeline."""
