@@ -1,0 +1,60 @@
+{
+    "scene": {
+        "name": "Test Scene",
+        "resolution": {
+            "x": 1920,
+            "y": 1080,
+            "percentage": 100
+        },
+        "camera": {
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 100
+            },
+            "rotation": {
+                "x": 90,
+                "y": 0,
+                "z": 0
+            }
+        },
+        "light": {
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "rotation": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            }
+        },
+        "engine": "CYCLES",
+        "cycles": {
+            "use_progressive_refine": false,
+            "tile_size": 256,
+            "use_persistent_data": true,
+            "samples": 64,
+            "use_adaptive_sampling": true,
+            "adaptive_threshold": 0.02,
+            "use_denoising": true,
+            "max_bounces": 4,
+            "diffuse_bounces": 2,
+            "glossy_bounces": 2,
+            "sample_clamp_indirect": 1.0
+        }
+    },
+    "paths": {
+        "models":   "./models",
+        "images":   "./images",
+        "labels":   "./labels",
+        "vis":      "./images/vis",
+        "textures": "./textures"
+    },
+    "output": {
+
+    },
+    
+    "create_visualization": true
+}

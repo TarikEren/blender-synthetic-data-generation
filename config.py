@@ -1,20 +1,3 @@
-general_config = {
-    "x_resolution": 1920,                   # x resolution of the image
-    "y_resolution": 1080,                   # y resolution of the image
-    "resolution_percentage": 100,           # Controls the resolution scaling of the final rendered image
-    "max_collision_check_amount": 50,       # Count of maximum collision checks before yielding
-    "tile_size": 256,                       # Sets the tile size for GPU rendering
-    "sample_count": 128,                    # Controls the number of samples per pixel
-    "use_denoising": True,                  # Enables denoising to reduce noise in the final render
-    "use_adaptive_sampling": True,          # Enables adaptive sampling
-    "adaptive_threshold": 0.01,             # Sets the threshold for adaptive sampling
-    "adaptive_min_samples": 64,             # Defines minimum samples before adaptive sampling kicks in
-    "use_denoising_prefilter": True,        # Enables denoising prefilter for better noise reduction
-    "images_dir": "images",                 # Path to save the images to
-    "labels_dir": "labels",                 # Path to save the labels to
-    "visualisation_dir": "vis"              # Path to save the visualisations to (Note: The path must exist)
-}
-
 #------------------------------------------------------------------------------
 # SCENE CONFIG
 #------------------------------------------------------------------------------

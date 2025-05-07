@@ -1,16 +1,16 @@
 # Blender Bounding Box Generator
 
-This project generates 3D objects in Blender, renders them from a top-down camera view, calculates their 2D bounding boxes, and exports them in YOLO format.
+This project enables the user to create `synthetic data` labeled with `2D bounding boxes`.
 
 ## Features
 
 - Runs Blender in headless mode
-- Creates random 3D scenes with varied objects
+- Creates random 3D scenes with given models
 - Positions objects without collisions
 - Uses different lighting setups for visual variety
 - Calculates accurate 2D bounding boxes for each object
 - Exports bounding boxes in YOLO format
-- Creates visualization images to verify bounding box accuracy
+- Optionally creates visualization images to verify bounding box accuracy
 
 ## Project Structure
 
@@ -21,7 +21,7 @@ The project has been organized into separate files for better maintainability:
 
 ## Requirements
 
-- Blender 2.93 or newer
+- Blender 4 or newer
 - Python 3.7+
 - OpenCV (`cv2`) for visualization
 
@@ -34,33 +34,22 @@ The project has been organized into separate files for better maintainability:
    ```
 
 ## Usage
+Your terminal should be able to run command `blender` without any issues to start using the program.
 
 ### Running Headlessly
 
 To run Blender in headless mode with this script:
 
 ```bash
-blender --background --python main.py -- --num-images 20
-```
-
-Or you can use the default settings:
-
-```bash
 blender --background --python main.py
 ```
-
-### Command-line Arguments
-
-- `--num-images`    : Number of images to generate (default: 10)
-- `--custom-model`  : Path to a custom model to be used
-- `--output-dir`    : Directory to save output (default: script directory)
 
 ### Output
 
 The script generates the following output:
 
 - **./images/image_XXX.png**: Rendered scenes
-- **./images/vis_XXX.png**: Visualization images with bounding boxes
+- **./images/vis/vis_XXX.png**: Visualization images with bounding boxes
 - **./labels/image_XXX.txt**: YOLO format bounding box coordinates
 
 ### YOLO Format
@@ -79,6 +68,7 @@ Where:
 
 You can modify various aspects of the generator:
 
+- Edit `config.json` to change various settings 
 - Edit `utils.py` to change object types, materials, lighting setups, etc.
 - Adjust the number of objects per scene in `create_objects` function (default: 7)
 - Change render settings in `setup_scene` function

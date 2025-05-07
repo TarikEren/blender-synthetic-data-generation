@@ -7,3 +7,5 @@
 /labels
 *.log
 /blender_utils/__pycache__
+/utils/__pycache__
+/schemas/__pycache__
