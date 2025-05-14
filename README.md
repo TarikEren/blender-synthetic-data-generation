@@ -16,11 +16,13 @@ This project enables the user to create `synthetic data` labeled with `2D boundi
 
 The project has been organized into separate files for better maintainability:
 
+TODO: CHANGE
 - **main.py**: Driver script that handles command-line arguments and orchestrates the generation process
 - **utils.py**: Utility functions for scene setup, object creation, bounding box calculation, and visualization
 
 ## Requirements
 
+- Git
 - Blender 4 or newer
 - Python 3.7+
 - OpenCV (`cv2`) for visualization
@@ -28,21 +30,22 @@ The project has been organized into separate files for better maintainability:
 ## Installation
 
 1. Make sure Blender is installed on your system
-2. Install OpenCV (if not already installed with Blender):
-   ```
-   pip install opencv-python
-   ```
+2. Start up a terminal instance at wherever you want.
+3. Clone the repository using the following command:
+```bash
+git clone https://github.com/TarikEren/blender-synthetic-data-generation.git
+```
 
 ## Usage
 Your terminal should be able to run command `blender` without any issues to start using the program.
 
-### Running Headlessly
-
-To run Blender in headless mode with this script:
+After making sure blender works fine run the following command
 
 ```bash
 blender --background --python main.py
 ```
+
+to start generating data with the provided `config.py` file
 
 ### Output
 
@@ -59,12 +62,15 @@ The bounding box format used is:
 <class_id> <x_center> <y_center> <width> <height>
 ```
 
+TODO: ADD DETAILS
 Where:
 - `class_id` is an integer (0-4) representing the object type:
 - All other values are normalized to [0,1]
 - (0,0) is the top-left corner of the image
 
 ## Customization
+
+TODO: CHANGE
 
 You can modify various aspects of the generator:
 

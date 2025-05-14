@@ -1,3 +1,7 @@
+"""
+Schema for the config file.
+"""
+
 config_schema = {
     "type": "object",
     "properties": {
