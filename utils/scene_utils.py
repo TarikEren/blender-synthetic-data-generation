@@ -142,7 +142,7 @@ def create_scene(config: Dict) -> bpy.types.Scene:
 
     return scene
 
-def clear_scene():
+def clear_scene() -> None:
     """Remove all objects, materials, meshes and lights from the scene."""
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete()
