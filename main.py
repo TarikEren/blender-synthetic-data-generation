@@ -5,30 +5,24 @@ This script generates 3D objects in Blender, renders them from a top-down camera
 calculates their 2D bounding boxes, and exports them in YOLO format.
 """
 
+# Standard Library Imports
 import os
 import sys
 import argparse
-import logging
+
+# Add the script's directory to Python's path
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.append(script_dir)
+
+# Third Party Imports
 import bpy
 
-# Adding the current directory to Python's module search path
-current_dir = os.path.dirname(os.path.abspath(__file__))
-if current_dir not in sys.path:
-    sys.path.append(current_dir)
+# Local Imports
+from blender_utils import generate_single_image, add_run_separator, logger
 
+# Configuration
 from config import config
-from blender_utils import generate_single_image, add_run_separator
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('blender_generator.log'),
-        logging.StreamHandler(sys.stdout)
-    ]
-)
-logger = logging.getLogger(__name__)
 
 # Add initial separator for this run
 logger.info(add_run_separator())
@@ -76,7 +70,7 @@ def main(num_images=1, output_dir=None, custom_model_path=None):
                         pass
                 continue
         
-        logger.info(f"Complete! Generated {num_images} images in {images_dir}")
+        logger.info(f"Generation completed. Generated {num_images} images in {images_dir}")
         logger.info(f"Labels saved to {labels_dir}")
         
     except Exception as e:
