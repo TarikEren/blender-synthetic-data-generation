@@ -21,11 +21,11 @@ import bpy
 # Local Imports
 from blender_utils import generate_single_image, add_run_separator, create_logger, logger
 
-# Initialize logger
-logger = create_logger()
-
 # Configuration
 from config import config
+
+# Initialize logger
+logger = create_logger()
 
 # Add initial separator for this run
 logger.info(add_run_separator())
@@ -55,12 +55,12 @@ def main(num_images=1, custom_model_path=None):
         logger.info(f"Labels will be saved to: {labels_dir}")
         
         # Generate the specified number of images
-        print(f"GENERATION STARTED: Generating {num_images} images")
         for i in range(num_images):
             try:
                 generate_single_image(i, custom_model_path)
             except Exception as e:
                 logger.error(f"Error generating image {i}: {str(e)}")
+
                 # Try to clean up any dangling references
                 for obj in bpy.data.objects:
                     try:
@@ -90,8 +90,8 @@ if __name__ == "__main__":
     
     # Add command line argument support
     parser = argparse.ArgumentParser(description='Generate Blender scenes with bounding boxes in YOLO format')
-    parser.add_argument('--num-images', type=int, default=10, 
-                        help='Number of images to generate (default: 10)')
+    parser.add_argument('--num-images', type=int, default=1, 
+                        help='Number of images to generate (default: 1)')
     parser.add_argument('--custom-model', type=str, default=None,
                         help='Path to custom 3D model to import (supports .obj, .fbx, .blend)')
     

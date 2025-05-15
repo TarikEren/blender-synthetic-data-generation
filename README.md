@@ -62,16 +62,16 @@ The project has been organized into separate files for better maintainability:
 
 ### Running Headlessly
 
-To run Blender in headless mode with this script:
-
-```bash
-blender --background --python main.py -- --num-images 20
-```
-
-Or you can use the default settings:
+To run the program with default settings (Renders a single image):
 
 ```bash
 blender --background --python main.py
+```
+
+Or you can provide a count with the following command
+
+```bash
+blender --background --python main.py -- --num-images 20
 ```
 
 ### Command-line Arguments
