@@ -1,5 +1,6 @@
 /images/*.png
 /labels/*.txt
+/visualisations/*.png
 /__pycache__
 /models
 /textures
