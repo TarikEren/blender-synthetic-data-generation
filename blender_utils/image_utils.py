@@ -15,7 +15,7 @@ from .camera_utils import create_camera
 from .lighting_utils import setup_lighting
 from .scene_utils import clear_scene, setup_scene
 from .object_utils import create_objects, create_textured_plane, find_valid_position
-from .bounding_box_utils import calculate_bounding_boxes, save_yolo_format, visualize_bounding_boxes
+from .bbox_utils import calculate_bounding_boxes, save_yolo_format, visualize_bounding_boxes
 
 from config import config
 
