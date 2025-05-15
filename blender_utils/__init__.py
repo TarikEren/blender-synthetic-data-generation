@@ -10,21 +10,23 @@ from .lighting_utils import setup_lighting
 from .object_utils import create_objects, import_custom_model, create_textured_plane, find_valid_position
 from .bounding_box_utils import calculate_bounding_boxes, save_yolo_format, visualize_bounding_boxes
 from .image_generation import generate_single_image, find_textures
+from .logger_utils import create_logger, add_run_separator
 
 __all__ = [
     'clear_scene',
     'setup_scene',
-    'add_run_separator',
     'create_camera',
-    'bpy_coords_to_pixel_coords',
     'setup_lighting',
     'create_objects',
     'import_custom_model',
     'create_textured_plane',
     'find_valid_position',
+    'bpy_coords_to_pixel_coords',
     'calculate_bounding_boxes',
     'save_yolo_format',
     'visualize_bounding_boxes',
     'generate_single_image',
-    'find_textures'
+    'find_textures',
+    'create_logger',
+    'add_run_separator'
 ] 

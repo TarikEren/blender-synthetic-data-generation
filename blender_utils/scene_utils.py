@@ -5,10 +5,9 @@ This module contains utility functions for scene setup and management in Blender
 """
 
 import bpy
-import logging
 from config import general_config, scene_config
 
-logger = logging.getLogger(__name__)
+from .logger_utils import logger
 
 def add_run_separator():
     """Add a visual separator to the log file to distinguish between different program runs."""

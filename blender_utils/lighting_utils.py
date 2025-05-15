@@ -6,9 +6,8 @@ This module contains utility functions for lighting setup and management in Blen
 
 import bpy
 import random
-import logging
 
-logger = logging.getLogger(__name__)
+from .logger_utils import logger
 
 def setup_lighting(seed=None):
     """Create randomized lighting setup for the scene."""

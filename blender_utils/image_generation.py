@@ -5,8 +5,8 @@ This module contains the main image generation function and related utilities.
 """
 
 import os
-import logging
 import random
+
 import bpy
 from config import general_config, object_config
 
@@ -15,11 +15,11 @@ from .camera_utils import create_camera
 from .lighting_utils import setup_lighting
 from .object_utils import create_objects, import_custom_model, create_textured_plane, find_valid_position
 from .bounding_box_utils import calculate_bounding_boxes, save_yolo_format, visualize_bounding_boxes
-
-logger = logging.getLogger(__name__)
+from .logger_utils import logger
 
 def find_textures(path: str) -> list[str]:
-    """Find all texture files in the given directory and its subdirectories.
+    """
+    Find all texture files in the given directory and its subdirectories.
     
     Args:
         path: Root directory to search for textures

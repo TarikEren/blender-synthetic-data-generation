@@ -7,12 +7,13 @@ This module contains utility functions for object creation and management in Ble
 import os
 import math
 import random
-import bpy
-import logging
-from config import object_config, scene_config, general_config
-from .scene_utils import clear_scene
 
-logger = logging.getLogger(__name__)
+import bpy
+
+from config import object_config, scene_config, general_config
+
+from .logger_utils import logger
+from .scene_utils import clear_scene
 
 def create_objects(num_objects=5, distribution_seed=None):
     """Create random 3D objects within the camera's field of view.

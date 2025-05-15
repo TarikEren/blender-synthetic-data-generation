@@ -5,10 +5,7 @@ This module contains utility functions for camera setup and management in Blende
 """
 
 import bpy
-import logging
 from config import scene_config, camera_config
-
-logger = logging.getLogger(__name__)
 
 def create_camera():
     """Create a camera positioned above the scene looking down."""
