@@ -5,9 +5,10 @@ This module contains utility functions for scene setup and management in Blender
 """
 
 import bpy
-from config import general_config, scene_config
 
 from .logger_utils import logger
+
+from config import config
 
 def clear_scene():
     """Remove all objects, materials, meshes and lights from the scene."""
@@ -54,22 +55,22 @@ def setup_scene():
             logger.debug(f"Enabled CUDA device: {device.name}")
     
     # Set render settings for faster preview
-    scene.render.resolution_x = general_config["x_resolution"]
-    scene.render.resolution_y = general_config["y_resolution"]
-    scene.render.resolution_percentage = general_config["resolution_percentage"]
+    scene.render.resolution_x = config["scene"]["resolution"]["x"]
+    scene.render.resolution_y = config["scene"]["resolution"]["y"]
+    scene.render.resolution_percentage = config["scene"]["resolution"]["percentage"]
     scene.render.filepath = '//rendered_image.png'
     
     # Optimize render settings for GPU
     scene.cycles.device = 'GPU'
-    scene.cycles.tile_size = general_config["tile_size"]            # Larger tile size for GPU
-    scene.cycles.samples = general_config["sample_count"]           # Reduced samples for faster preview
-    scene.cycles.use_denoising = general_config["use_denoising"]    # Enable denoising for cleaner results
+    scene.cycles.tile_size = config["scene"]["cycles"]["tile_size"]            # Larger tile size for GPU
+    scene.cycles.samples = config["scene"]["cycles"]["sample_count"]           # Reduced samples for faster preview
+    scene.cycles.use_denoising = config["scene"]["cycles"]["use_denoising"]    # Enable denoising for cleaner results
     
     # Additional GPU optimizations
-    scene.cycles.use_adaptive_sampling = general_config["use_adaptive_sampling"]
-    scene.cycles.adaptive_threshold = general_config["adaptive_threshold"]
-    scene.cycles.adaptive_min_samples = general_config["adaptive_min_samples"]
-    scene.cycles.use_denoising_prefilter = general_config["use_denoising_prefilter"]
+    scene.cycles.use_adaptive_sampling = config["scene"]["cycles"]["use_adaptive_sampling"]
+    scene.cycles.adaptive_threshold = config["scene"]["cycles"]["adaptive_threshold"]
+    scene.cycles.adaptive_min_samples = config["scene"]["cycles"]["adaptive_min_samples"]
+    scene.cycles.use_denoising_prefilter = config["scene"]["cycles"]["use_denoising_prefilter"]
     
     # Force GPU compute
     scene.cycles.feature_set = 'EXPERIMENTAL'
@@ -110,7 +111,7 @@ def setup_scene():
     world = bpy.data.worlds['World']
     world.use_nodes = True
     bg_node = world.node_tree.nodes['Background']
-    bg_node.inputs[0].default_value = scene_config["background_default_colour"]
-    bg_node.inputs[1].default_value = scene_config["background_default_colour_strength"]
+    bg_node.inputs[0].default_value = config["scene"]["default_background"]
+    bg_node.inputs[1].default_value = config["scene"]["default_background_strength"]
     
     return scene 

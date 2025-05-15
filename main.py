@@ -16,7 +16,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.append(current_dir)
 
-from config import general_config
+from config import config
 from blender_utils import generate_single_image, add_run_separator
 
 # Configure logging
@@ -49,9 +49,8 @@ def main(num_images=1, output_dir=None, custom_model_path=None):
             base_dir = os.getcwd()
         else:
             base_dir = output_dir
-            
-        images_dir = os.path.join(base_dir, general_config["images_dir"])
-        labels_dir = os.path.join(base_dir, general_config["labels_dir"])
+        images_dir = os.path.join(base_dir, config["paths"]["images"])
+        labels_dir = os.path.join(base_dir, config["paths"]["labels"])
         
         # Create directories if they don't exist
         os.makedirs(images_dir, exist_ok=True)
@@ -66,7 +65,7 @@ def main(num_images=1, output_dir=None, custom_model_path=None):
         # Generate the specified number of images
         for i in range(num_images):
             try:
-                generate_single_image(i, images_dir, labels_dir, custom_model_path)
+                generate_single_image(i, custom_model_path)
             except Exception as e:
                 logger.error(f"Error generating image {i}: {str(e)}")
                 # Try to clean up any dangling references

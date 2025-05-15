@@ -5,9 +5,11 @@ This module contains utility functions for calculating and managing bounding box
 """
 
 import cv2
-from config import class_config
-from .camera_utils import bpy_coords_to_pixel_coords
+
 from .logger_utils import logger
+from .camera_utils import bpy_coords_to_pixel_coords
+
+from config import config
 
 def calculate_bounding_boxes(scene, camera, objects):
     """Calculate 2D bounding boxes for 3D objects in the scene.
@@ -130,7 +132,7 @@ def visualize_bounding_boxes(image_path, bbox_file, output_path):
     logger.debug(f"Found {len(lines)} bounding boxes to visualize")
     
     # Colors for visualization (BGR format)
-    colors = class_config["class_colours"]
+    colors = config["output"]["class_colours"]
     
     # Draw bounding boxes on the image
     for line in lines:
@@ -162,7 +164,7 @@ def visualize_bounding_boxes(image_path, bbox_file, output_path):
                 cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
                 
                 # Draw class label
-                class_name = class_config["classes"][class_idx]
+                class_name = config["output"]["classes"][class_idx]
                 cv2.putText(img, class_name, (x1, y1 - 10), 
                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
                 

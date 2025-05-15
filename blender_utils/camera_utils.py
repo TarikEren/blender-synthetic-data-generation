@@ -5,11 +5,11 @@ This module contains utility functions for camera setup and management in Blende
 """
 
 import bpy
-from config import scene_config, camera_config
+from config import config
 
 def create_camera():
     """Create a camera positioned above the scene looking down."""
-    bpy.ops.object.camera_add(location=(0, 0, scene_config["camera_height"]))
+    bpy.ops.object.camera_add(location=(0, 0, config["camera"]["position"]["z"]))
     camera = bpy.context.active_object
     
     # Point camera straight down (negative Z-axis)
@@ -17,9 +17,9 @@ def create_camera():
     
     # Set camera parameters
     camera_data = camera.data
-    camera_data.lens = camera_config["focal_length"]  # Focal length in mm
-    camera_data.clip_start = camera_config["clip_start"]
-    camera_data.clip_end = camera_config["clip_end"]  # Set clip end to twice the camera height
+    camera_data.lens = config["camera"]["focal_length"]  # Focal length in mm
+    camera_data.clip_start = config["camera"]["clip_start"]
+    camera_data.clip_end = config["camera"]["clip_end"]  # Set clip end to twice the camera height
     
     # Set this camera as the active/scene camera
     bpy.context.scene.camera = camera

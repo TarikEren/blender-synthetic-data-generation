@@ -8,7 +8,6 @@ import os
 import random
 
 import bpy
-from config import general_config, object_config
 
 from .scene_utils import clear_scene, setup_scene
 from .camera_utils import create_camera
@@ -16,6 +15,8 @@ from .lighting_utils import setup_lighting
 from .object_utils import create_objects, import_custom_model, create_textured_plane, find_valid_position
 from .bounding_box_utils import calculate_bounding_boxes, save_yolo_format, visualize_bounding_boxes
 from .logger_utils import logger
+
+from config import config
 
 def find_textures(path: str) -> list[str]:
     """
@@ -43,15 +44,15 @@ def find_textures(path: str) -> list[str]:
     
     return texture_files
 
-def generate_single_image(index, images_dir, labels_dir, custom_model_path=None):
+def generate_single_image(index, custom_model_path=None):
     """Generate a single image with bounding boxes."""
     logger.info(f"Generating image {index+1}")
     logger.info(f"Custom model path: {custom_model_path}")
     
     # Convert relative paths to absolute paths
-    images_dir_abs = os.path.abspath(images_dir)
-    labels_dir_abs = os.path.abspath(labels_dir)
-    visualization_dir_abs = os.path.join(images_dir_abs, general_config["visualisation_dir"])
+    images_dir_abs = os.path.abspath(config["paths"]["images"])
+    labels_dir_abs = os.path.abspath(config["paths"]["labels"])
+    visualization_dir_abs = os.path.join(config["paths"]["vis"])
     
     if custom_model_path:
         custom_model_abs = os.path.abspath(custom_model_path)
@@ -146,11 +147,11 @@ def generate_single_image(index, images_dir, labels_dir, custom_model_path=None)
                     max_dim = max(dims)
                     if max_dim > 0:
                         # Base scale factor
-                        base_scale = object_config["max_scale"] / max_dim
+                        base_scale = config["object"]["max_scale"] / max_dim
                         
                         # Random scale variation between 1 and 1.5
-                        scale_variation = random.uniform(object_config["scale_variation_range"][0],
-                                                         object_config["scale_variation_range"][1])
+                        scale_variation = random.uniform(config["object"]["scale_variation_range"][0],
+                                                         config["object"]["scale_variation_range"][1])
                         
                         # Apply random scale
                         scale_factor = base_scale * scale_variation
