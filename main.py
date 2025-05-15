@@ -30,6 +30,21 @@ logger = create_logger()
 # Add initial separator for this run
 logger.info(add_run_separator())
 
+def check_directories():
+    """
+    Check if the images and labels directories exist.
+    """
+    images_dir = os.path.join(config["paths"]["images"])
+    labels_dir = os.path.join(config["paths"]["labels"])
+    vis_dir = os.path.join(config["paths"]["vis"])
+
+    if not os.path.exists(images_dir):
+        raise FileNotFoundError(f"Images directory does not exist: {images_dir}")
+    if not os.path.exists(labels_dir):
+        raise FileNotFoundError(f"Labels directory does not exist: {labels_dir}")
+    if not os.path.exists(vis_dir):
+        raise FileNotFoundError(f"Visualization directory does not exist: {vis_dir}")
+
 def main(num_images: int, custom_model_path: str=None):
     """
     Main function to run the entire pipeline.
@@ -39,19 +54,19 @@ def main(num_images: int, custom_model_path: str=None):
         custom_model_path (str, optional): The path to the custom model to use. Defaults to None.
     """
     try:
+        # Check if the directories exist
+        check_directories()
+
+        # If they do, set the paths
+        images_dir = os.path.join(config["paths"]["images"])
+        labels_dir = os.path.join(config["paths"]["labels"])
+
         # Debug logging for custom model path
         logger.info("Debug Information:")
         logger.info(f"Custom Model Path: {custom_model_path}")
         logger.info(f"Custom Model Path Type: {type(custom_model_path)}")
         if custom_model_path:
             logger.info(f"Custom Model Path exists: {os.path.exists(custom_model_path)}")
-        
-        images_dir = os.path.join(config["paths"]["images"])
-        labels_dir = os.path.join(config["paths"]["labels"])
-        
-        # Create directories if they don't exist
-        os.makedirs(images_dir, exist_ok=True)
-        os.makedirs(labels_dir, exist_ok=True)
         
         logger.info(f"Starting generation of {num_images} images")
         if custom_model_path:

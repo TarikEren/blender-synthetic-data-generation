@@ -43,11 +43,6 @@ def generate_single_image(index, custom_model_path=None):
         logger.debug(f"Absolute custom model path: {custom_model_abs}")
         logger.debug(f"Custom model file exists: {os.path.exists(custom_model_abs)}")
     
-    # Create directories if they don't exist
-    os.makedirs(images_dir_abs, exist_ok=True)
-    os.makedirs(labels_dir_abs, exist_ok=True)
-    os.makedirs(visualization_dir_abs, exist_ok=True)  # Create visualization directory
-    
     # Set up filenames for this image
     image_filename = f"image_{index:03d}.png"
     label_filename = f"image_{index:03d}.txt"
