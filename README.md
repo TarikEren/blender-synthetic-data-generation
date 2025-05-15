@@ -17,7 +17,32 @@ This project generates 3D objects in Blender, renders them from a top-down camer
 The project has been organized into separate files for better maintainability:
 
 - **main.py**: Driver script that handles command-line arguments and orchestrates the generation process
-- **utils.py**: Utility functions for scene setup, object creation, bounding box calculation, and visualization
+- **/blender_utils**: Contains the utility functions
+   - ***asset_utils.py*** Asset utility functions for:
+      - Finding textures
+      - Importing models
+      - Finding models
+   - ***bbox_utils.py***: Bounding box utilty functions for:
+      - Bounding box calculations
+      - Transforming labels into YOLO format
+      - Visualising the labels for verification
+   - ***camera_utils.py***: Camera utilty functions for:
+      - Camera creation
+      - Converting 3D world coordinates to 2D pixel coordinates
+   - ***image_utils.py*** Image generation utility functions for:
+      - Generating a single image
+   - ***lighting_utils.py*** Lighting utility functions for:
+      - Creating lighting
+   - ***logger_utils.py*** Logger utility functions for:
+      - Creatting a logger
+   - ***object_utils.py*** Object utility functions for:
+      - Object creation
+      - Collision checks
+      - Finding valid positions for objects
+   - ***scene_utils.py***: Scene utility functions for:
+      - Scene creation
+      - Clearing the scene
+      - Creating a textured plane
 
 ## Requirements
 

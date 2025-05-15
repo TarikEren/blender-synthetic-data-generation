@@ -3,11 +3,11 @@ Lighting Utilities for Blender Bounding Box Generator
 
 This module contains utility functions for lighting setup and management in Blender.
 """
-
-import bpy
+# Standard Library Imports
 import random
 
-from .logger_utils import logger
+# Third Party Imports
+import bpy
 
 def setup_lighting(seed=None):
     """Create randomized lighting setup for the scene."""

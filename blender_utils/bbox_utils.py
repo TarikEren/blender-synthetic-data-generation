@@ -4,11 +4,14 @@ Bounding Box Utilities for Blender Bounding Box Generator
 This module contains utility functions for calculating and managing bounding boxes in Blender.
 """
 
+# Standard Library Imports
 import cv2
 
+# Local Imports
 from .logger_utils import logger
 from .camera_utils import bpy_coords_to_pixel_coords
 
+# Configuration
 from config import config
 
 def calculate_bounding_boxes(scene, camera, objects):

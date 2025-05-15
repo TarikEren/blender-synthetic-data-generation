@@ -4,10 +4,16 @@ Scene Utilities for Blender Bounding Box Generator
 This module contains utility functions for scene setup and management in Blender.
 """
 
+# Standard Library Imports
+import os
+
+# Third Party Imports
 import bpy
 
+# Local Imports
 from .logger_utils import logger
 
+# Configuration
 from config import config
 
 def clear_scene():
@@ -114,4 +120,88 @@ def setup_scene():
     bg_node.inputs[0].default_value = config["scene"]["default_background"]
     bg_node.inputs[1].default_value = config["scene"]["default_background_strength"]
     
-    return scene 
+    return scene
+
+def create_textured_plane(texture_path=None):
+    """Create a 3x3 grid of planes with optional texture.
+    
+    Args:
+        texture_path: Path to the texture file (.blend)
+    """
+    planes = []
+    plane_size = config["scene"]["grid"]["size"] # Size of each individual plane
+    spacing = plane_size  # Planes will touch perfectly
+    
+    # Create a plane grid
+    for i in range(3):
+        for j in range(3):
+            # Calculate position for this plane
+            x = (i - 1) * spacing  # -1, 0, 1
+            y = (j - 1) * spacing  # -1, 0, 1
+            
+            # Create the plane
+            bpy.ops.mesh.primitive_plane_add(size=plane_size, location=(x, y, 0))
+            plane = bpy.context.active_object
+            
+            # Set plane name for easy identification
+            plane.name = f"Background_Plane_{i}_{j}"
+            
+            # Create material
+            mat = bpy.data.materials.new(name=f"Ground_Material_{i}_{j}")
+            mat.use_nodes = True
+            nodes = mat.node_tree.nodes
+            links = mat.node_tree.links
+            
+            # Clear existing nodes
+            nodes.clear()
+            
+            # Create nodes for texture setup
+            material_output = nodes.new('ShaderNodeOutputMaterial')
+            principled_bsdf = nodes.new('ShaderNodeBsdfPrincipled')
+            
+            # Link Principled BSDF to Material Output
+            links.new(principled_bsdf.outputs['BSDF'], material_output.inputs['Surface'])
+            
+            if texture_path and os.path.exists(texture_path):
+                try:
+                    # Append the material from the .blend file
+                    with bpy.data.libraries.load(texture_path) as (data_from, data_to):
+                        # Find material names in the .blend file
+                        material_names = [name for name in data_from.materials]
+                        if material_names:
+                            # Load the first material found
+                            data_to.materials = [material_names[0]]
+                    
+                    if data_to.materials and data_to.materials[0] is not None:
+                        # Use the loaded material instead of creating a new one
+                        imported_mat = data_to.materials[0]
+                        
+                        # Assign the imported material to the plane
+                        if plane.data.materials:
+                            plane.data.materials[0] = imported_mat
+                        else:
+                            plane.data.materials.append(imported_mat)
+                        
+                        logger.info(f"Successfully applied material from: {texture_path}")
+                        planes.append(plane)
+                        continue
+                    
+                    raise Exception("No valid materials found in the .blend file")
+                    
+                except Exception as e:
+                    logger.error(f"Error applying material from .blend file: {str(e)}")
+                    # Fallback to default material if texture fails
+                    principled_bsdf.inputs[0].default_value = config["object"]["default_colour"]
+            else:
+                # Fallback to default again
+                principled_bsdf.inputs[0].default_value = config["object"]["default_colour"]
+            
+            # Assign material to plane (only if we didn't successfully import a material)
+            if plane.data.materials:
+                plane.data.materials[0] = mat
+            else:
+                plane.data.materials.append(mat)
+            
+            planes.append(plane)
+    
+    return planes 

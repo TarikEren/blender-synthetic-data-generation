@@ -3,8 +3,10 @@ Camera Utilities for Blender Bounding Box Generator
 
 This module contains utility functions for camera setup and management in Blender.
 """
-
+# Standard Library Imports
 import bpy
+
+# Configuration
 from config import config
 
 def create_camera():

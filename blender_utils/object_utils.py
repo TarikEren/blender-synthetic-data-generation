@@ -3,16 +3,14 @@ Object Utilities for Blender Bounding Box Generator
 
 This module contains utility functions for object creation and management in Blender.
 """
-
-import os
+# Standard Library Imports
 import math
 import random
 
+# Third Party Imports
 import bpy
 
-from .logger_utils import logger
-from .scene_utils import clear_scene
-
+# Configuration
 from config import config
 
 def create_objects(num_objects=5, distribution_seed=None):
@@ -187,185 +185,6 @@ def create_objects(num_objects=5, distribution_seed=None):
         random.seed()
         
     return objects
-
-def import_custom_model(model_path):
-    """Import a custom 3D model into the scene."""
-    logger.info(f"Attempting to import model from: {model_path}")
-    
-    # Clear the scene first
-    clear_scene()
-    
-    # Import the model based on file extension
-    file_ext = os.path.splitext(model_path)[1].lower()
-    logger.debug(f"File extension: {file_ext}")
-    
-    try:
-        # Store the current object names
-        existing_objects = set(obj.name for obj in bpy.data.objects)
-        
-        # Import based on file type
-        if file_ext == '.obj':
-            logger.info("Importing OBJ file...")
-            try:
-                # First try the new method (Blender 4.x)
-                if hasattr(bpy.ops.wm, 'obj_import'):
-                    bpy.ops.wm.obj_import(filepath=model_path)
-                # Then try the legacy method
-                elif hasattr(bpy.ops.import_scene, 'obj'):
-                    bpy.ops.import_scene.obj(filepath=model_path)
-                else:
-                    raise ImportError("No OBJ import operator found")
-            except Exception as e:
-                logger.error(f"Import error: {str(e)}")
-                raise
-        elif file_ext == '.fbx':
-            logger.info("Importing FBX file...")
-            if hasattr(bpy.ops.wm, 'fbx_import'):
-                bpy.ops.wm.fbx_import(filepath=model_path)
-            else:
-                bpy.ops.import_scene.fbx(filepath=model_path)
-        elif file_ext == '.blend':
-            logger.info("Importing Blend file...")
-            bpy.ops.wm.append(filepath=model_path)
-        else:
-            raise ValueError(f"Unsupported file format: {file_ext}")
-        
-        # Find newly added objects
-        new_objects = [obj for obj in bpy.data.objects if obj.name not in existing_objects]
-        logger.debug(f"New objects after import: {new_objects}")
-        
-        if not new_objects:
-            raise ValueError("No new objects were imported")
-            
-        # Get the main imported object (usually the first one)
-        imported_obj = new_objects[0]
-        logger.info(f"Using imported object: {imported_obj.name}")
-        
-        # Store the object's name for later reference
-        obj_name = imported_obj.name
-        
-        try:
-            # Set a custom property to identify this as a custom model
-            bpy.data.objects[obj_name]['class_idx'] = 0
-            
-            denominator = random.randint(config["object"]["denominator_range"][0],
-                                         config["object"]["denominator_range"][1])
-            
-            # Calculate scale to make largest dimension 5 units
-            scale_factor = config["object"]["max_scale"] / denominator
-            
-            # Scale and position the object
-            obj = bpy.data.objects[obj_name]
-            obj.scale = (scale_factor, scale_factor, scale_factor)
-            
-            # Reset all rotations first
-            obj.rotation_euler = (0, 0, 0)
-            
-            # Apply 90 degrees counter-clockwise rotation around all axes
-            # Note: math.pi/2 is 90 degrees
-            obj.rotation_euler = (math.pi/2, math.pi/2, math.pi/2)
-            
-            # Update the scene to apply rotation
-            bpy.context.view_layer.update()
-            
-            # Position slightly above ground after rotation
-            obj.location = (0, 0, 2)
-            
-            logger.info(f"Adjusted object scale to {scale_factor}, rotated 90 degrees on X, Y, and Z axes, and positioned at height 2")
-            
-        except Exception as e:
-            logger.warning(f"Error during object adjustment: {str(e)}")
-            logger.warning("Continuing with unadjusted object...")
-        
-        return obj_name  # Return the name instead of the object reference
-        
-    except Exception as e:
-        logger.error(f"Error during model import: {str(e)}")
-        raise
-
-def create_textured_plane(texture_path=None):
-    """Create a 3x3 grid of planes with optional texture.
-    
-    Args:
-        texture_path: Path to the texture file (.blend)
-    """
-    planes = []
-    plane_size = config["scene"]["grid"]["size"] # Size of each individual plane
-    spacing = plane_size  # Planes will touch perfectly
-    
-    # Create a plane grid
-    for i in range(3):
-        for j in range(3):
-            # Calculate position for this plane
-            x = (i - 1) * spacing  # -1, 0, 1
-            y = (j - 1) * spacing  # -1, 0, 1
-            
-            # Create the plane
-            bpy.ops.mesh.primitive_plane_add(size=plane_size, location=(x, y, 0))
-            plane = bpy.context.active_object
-            
-            # Set plane name for easy identification
-            plane.name = f"Background_Plane_{i}_{j}"
-            
-            # Create material
-            mat = bpy.data.materials.new(name=f"Ground_Material_{i}_{j}")
-            mat.use_nodes = True
-            nodes = mat.node_tree.nodes
-            links = mat.node_tree.links
-            
-            # Clear existing nodes
-            nodes.clear()
-            
-            # Create nodes for texture setup
-            material_output = nodes.new('ShaderNodeOutputMaterial')
-            principled_bsdf = nodes.new('ShaderNodeBsdfPrincipled')
-            
-            # Link Principled BSDF to Material Output
-            links.new(principled_bsdf.outputs['BSDF'], material_output.inputs['Surface'])
-            
-            if texture_path and os.path.exists(texture_path):
-                try:
-                    # Append the material from the .blend file
-                    with bpy.data.libraries.load(texture_path) as (data_from, data_to):
-                        # Find material names in the .blend file
-                        material_names = [name for name in data_from.materials]
-                        if material_names:
-                            # Load the first material found
-                            data_to.materials = [material_names[0]]
-                    
-                    if data_to.materials and data_to.materials[0] is not None:
-                        # Use the loaded material instead of creating a new one
-                        imported_mat = data_to.materials[0]
-                        
-                        # Assign the imported material to the plane
-                        if plane.data.materials:
-                            plane.data.materials[0] = imported_mat
-                        else:
-                            plane.data.materials.append(imported_mat)
-                        
-                        logger.info(f"Successfully applied material from: {texture_path}")
-                        planes.append(plane)
-                        continue
-                    
-                    raise Exception("No valid materials found in the .blend file")
-                    
-                except Exception as e:
-                    logger.error(f"Error applying material from .blend file: {str(e)}")
-                    # Fallback to default material if texture fails
-                    principled_bsdf.inputs[0].default_value = config["object"]["default_colour"]
-            else:
-                # Fallback to default again
-                principled_bsdf.inputs[0].default_value = config["object"]["default_colour"]
-            
-            # Assign material to plane (only if we didn't successfully import a material)
-            if plane.data.materials:
-                plane.data.materials[0] = mat
-            else:
-                plane.data.materials.append(mat)
-            
-            planes.append(plane)
-    
-    return planes 
 
 def is_colliding(position, existing_objects, min_distance=3.0):
     """Check if a position would collide with existing objects.

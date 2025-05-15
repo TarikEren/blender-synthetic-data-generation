@@ -3,20 +3,23 @@ Image Generation Utilities for Blender Bounding Box Generator
 
 This module contains the main image generation function and related utilities.
 """
-
+# Standard Library Imports
 import os
 import random
 
+# Third Party Imports
 import bpy
 
+# Local Imports
 from .logger_utils import logger
 from .asset_utils import find_textures
 from .camera_utils import create_camera
 from .lighting_utils import setup_lighting
-from .scene_utils import clear_scene, setup_scene
-from .object_utils import create_objects, create_textured_plane, find_valid_position
+from .object_utils import create_objects, find_valid_position
+from .scene_utils import clear_scene, setup_scene, create_textured_plane
 from .bbox_utils import calculate_bounding_boxes, save_yolo_format, visualize_bounding_boxes
 
+# Configuration
 from config import config
 
 def generate_single_image(index, custom_model_path=None):
