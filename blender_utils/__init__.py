@@ -4,7 +4,7 @@ Blender Utilities Package
 This package contains utility modules for the Blender Bounding Box Generator.
 """
 
-from .scene_utils import clear_scene, setup_scene, add_run_separator
+from .scene_utils import clear_scene, setup_scene
 from .camera_utils import create_camera, bpy_coords_to_pixel_coords
 from .lighting_utils import setup_lighting
 from .object_utils import create_objects, import_custom_model, create_textured_plane, find_valid_position

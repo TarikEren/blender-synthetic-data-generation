@@ -9,12 +9,6 @@ from config import general_config, scene_config
 
 from .logger_utils import logger
 
-def add_run_separator():
-    """Add a visual separator to the log file to distinguish between different program runs."""
-    separator = "=" * 40
-    run_header = " New Execution "
-    return separator + run_header + separator
-
 def clear_scene():
     """Remove all objects, materials, meshes and lights from the scene."""
     bpy.ops.object.select_all(action='SELECT')
