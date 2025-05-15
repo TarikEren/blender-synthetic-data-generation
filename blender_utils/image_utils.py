@@ -9,40 +9,15 @@ import random
 
 import bpy
 
-from .scene_utils import clear_scene, setup_scene
+from .logger_utils import logger
+from .asset_utils import find_textures
 from .camera_utils import create_camera
 from .lighting_utils import setup_lighting
-from .object_utils import create_objects, import_custom_model, create_textured_plane, find_valid_position
+from .scene_utils import clear_scene, setup_scene
+from .object_utils import create_objects, create_textured_plane, find_valid_position
 from .bounding_box_utils import calculate_bounding_boxes, save_yolo_format, visualize_bounding_boxes
-from .logger_utils import logger
 
 from config import config
-
-def find_textures(path: str) -> list[str]:
-    """
-    Find all texture files in the given directory and its subdirectories.
-    
-    Args:
-        path: Root directory to search for textures
-        
-    Returns:
-        List of paths to texture files
-    """
-    texture_files = []
-    texture_extensions = ['.blend']  # Focus on .blend files for now
-    
-    # Walk through the directory and its subdirectories
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            # Check if file has a texture extension
-            if any(file.lower().endswith(ext) for ext in texture_extensions):
-                # Get the full path to the texture file
-                texture_path = os.path.join(root, file)
-                # Convert to absolute path
-                texture_path = os.path.abspath(texture_path)
-                texture_files.append(texture_path)
-    
-    return texture_files
 
 def generate_single_image(index, custom_model_path=None):
     """Generate a single image with bounding boxes."""
@@ -86,7 +61,7 @@ def generate_single_image(index, custom_model_path=None):
         setup_lighting(seed=index+100)
         
         # Get list of available textures
-        texture_files = find_textures("./textures")
+        texture_files = find_textures()
         logger.info(f"Found {len(texture_files)} texture files")
         
         # Randomly select a texture if available
