@@ -19,7 +19,10 @@ if script_dir not in sys.path:
 import bpy
 
 # Local Imports
-from blender_utils import generate_single_image, add_run_separator, logger
+from blender_utils import generate_single_image, add_run_separator, create_logger, logger
+
+# Initialize logger
+logger = create_logger()
 
 # Configuration
 from config import config
@@ -27,7 +30,7 @@ from config import config
 # Add initial separator for this run
 logger.info(add_run_separator())
 
-def main(num_images=1, output_dir=None, custom_model_path=None):
+def main(num_images=1, custom_model_path=None):
     """Main function to run the entire pipeline."""
     try:
         # Debug logging for custom model path
@@ -38,13 +41,8 @@ def main(num_images=1, output_dir=None, custom_model_path=None):
             logger.info(f"Custom Model Path exists: {os.path.exists(custom_model_path)}")
         logger.info("------------------------")
         
-        # Setup directories
-        if output_dir is None:
-            base_dir = os.getcwd()
-        else:
-            base_dir = output_dir
-        images_dir = os.path.join(base_dir, config["paths"]["images"])
-        labels_dir = os.path.join(base_dir, config["paths"]["labels"])
+        images_dir = os.path.join(config["paths"]["images"])
+        labels_dir = os.path.join(config["paths"]["labels"])
         
         # Create directories if they don't exist
         os.makedirs(images_dir, exist_ok=True)
@@ -57,6 +55,7 @@ def main(num_images=1, output_dir=None, custom_model_path=None):
         logger.info(f"Labels will be saved to: {labels_dir}")
         
         # Generate the specified number of images
+        print(f"GENERATION STARTED: Generating {num_images} images")
         for i in range(num_images):
             try:
                 generate_single_image(i, custom_model_path)
@@ -93,8 +92,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate Blender scenes with bounding boxes in YOLO format')
     parser.add_argument('--num-images', type=int, default=10, 
                         help='Number of images to generate (default: 10)')
-    parser.add_argument('--output-dir', type=str, default=None, 
-                        help='Directory to save output (default: script directory)')
     parser.add_argument('--custom-model', type=str, default=None,
                         help='Path to custom 3D model to import (supports .obj, .fbx, .blend)')
     
@@ -105,13 +102,14 @@ if __name__ == "__main__":
         
         # Run main with better error handling
         try:
-            main(args.num_images, args.output_dir, args.custom_model)
+            main(args.num_images, args.custom_model)
         except Exception as e:
             logger.error(f"Error running main: {str(e)}")
             sys.exit(1)
             
     except Exception as e:
         logger.error(f"Error parsing arguments: {e}")
+
         # If argument parsing fails, try with defaults
         try:
             main()

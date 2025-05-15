@@ -78,7 +78,6 @@ blender --background --python main.py
 
 - `--num-images`    : Number of images to generate (default: 10)
 - `--custom-model`  : Path to a custom model to be used
-- `--output-dir`    : Directory to save output (default: script directory)
 
 ### Output
 
