@@ -23,7 +23,13 @@ from .bbox_utils import calculate_bounding_boxes, save_yolo_format, visualize_bo
 from config import config
 
 def generate_single_image(index, custom_model_path=None):
-    """Generate a single image with bounding boxes."""
+    """
+    Generate a single image with bounding boxes.
+
+    Args:
+        index (int): The index of the image to generate.
+        custom_model_path (str, optional): The path to the custom model to use. Defaults to None.
+    """
     logger.info(f"Generating image {index+1}")
     logger.info(f"Custom model path: {custom_model_path}")
     

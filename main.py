@@ -30,8 +30,14 @@ logger = create_logger()
 # Add initial separator for this run
 logger.info(add_run_separator())
 
-def main(num_images=1, custom_model_path=None):
-    """Main function to run the entire pipeline."""
+def main(num_images: int, custom_model_path: str=None):
+    """
+    Main function to run the entire pipeline.
+
+    Args:
+        num_images (int): The number of images to generate.
+        custom_model_path (str, optional): The path to the custom model to use. Defaults to None.
+    """
     try:
         # Debug logging for custom model path
         logger.info("Debug Information:")
@@ -39,7 +45,6 @@ def main(num_images=1, custom_model_path=None):
         logger.info(f"Custom Model Path Type: {type(custom_model_path)}")
         if custom_model_path:
             logger.info(f"Custom Model Path exists: {os.path.exists(custom_model_path)}")
-        logger.info("------------------------")
         
         images_dir = os.path.join(config["paths"]["images"])
         labels_dir = os.path.join(config["paths"]["labels"])
