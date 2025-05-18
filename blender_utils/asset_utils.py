@@ -123,7 +123,6 @@ def check_directories():
     if not os.path.exists(vis_dir):
         raise FileNotFoundError(f"Visualization directory does not exist: {vis_dir}")
 
-
 def find_textures() -> list[str]:
     """
     Find all texture files in the given directory and its subdirectories.
@@ -151,11 +150,19 @@ def find_textures() -> list[str]:
     return texture_files
 
 def find_models() -> list[str]:
-    # TODO: Implement this function
     """
     Find all model files in the given directory and its subdirectories.
     
     Returns:
         List of paths to model files
     """
-    
+    model_files = []
+    model_extensions = ['.obj']
+
+    for root, dirs, files in os.walk(config["paths"]["models"]):
+        for file in files:
+            if any(file.lower().endswith(ext) for ext in model_extensions):
+                model_path = os.path.join(root, file)
+                model_path = os.path.abspath(model_path)
+                model_files.append(model_path)
+    return model_files

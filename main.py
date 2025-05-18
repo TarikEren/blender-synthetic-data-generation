@@ -23,7 +23,9 @@ from blender_utils import (generate_single_image,
                            add_run_separator,
                            create_logger,
                            logger,
-                           check_directories)
+                           check_directories,
+                           find_models,
+                           find_textures)
 
 # Configuration
 from config import config
@@ -46,14 +48,18 @@ def main(num_images: int, custom_model_path: str=None):
         # Check if the directories exist
         check_directories()
 
+        all_models = find_models()
+        all_textures = find_textures()
+
         # If they do, set the paths
         images_dir = os.path.join(config["paths"]["images"])
         labels_dir = os.path.join(config["paths"]["labels"])
 
         # Debug logging for custom model path
-        logger.info("Debug Information:")
         logger.info(f"Custom Model Path: {custom_model_path}")
         logger.info(f"Custom Model Path Type: {type(custom_model_path)}")
+        logger.info(f"All Models: {all_models}")
+        logger.info(f"All Textures: {all_textures}")
         if custom_model_path:
             logger.info(f"Custom Model Path exists: {os.path.exists(custom_model_path)}")
         
@@ -66,7 +72,7 @@ def main(num_images: int, custom_model_path: str=None):
         # Generate the specified number of images
         for i in range(num_images):
             try:
-                generate_single_image(i, custom_model_path)
+                generate_single_image(i, all_textures, custom_model_path)
             except Exception as e:
                 logger.error(f"Error generating image {i}: {str(e)}")
 

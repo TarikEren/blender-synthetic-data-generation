@@ -22,16 +22,19 @@ from .bbox_utils import calculate_bounding_boxes, save_yolo_format, visualize_bo
 # Configuration
 from config import config
 
-def generate_single_image(index, custom_model_path=None):
+def generate_single_image(index: int,
+                          textures: list[str],
+                          custom_model_path: str=None):
     """
     Generate a single image with bounding boxes.
 
     Args:
         index (int): The index of the image to generate.
+        textures (list[str]): The list of texture paths to use.
         custom_model_path (str, optional): The path to the custom model to use. Defaults to None.
     """
     logger.info(f"Generating image {index+1}")
-    logger.info(f"Custom model path: {custom_model_path}")
+    logger.info(f"Textures: {textures}")
     
     # Convert relative paths to absolute paths
     images_dir_abs = os.path.abspath(config["paths"]["images"])
@@ -64,14 +67,10 @@ def generate_single_image(index, custom_model_path=None):
         # Setup randomized lighting using the image index as seed
         setup_lighting(seed=index+100)
         
-        # Get list of available textures
-        texture_files = find_textures()
-        logger.info(f"Found {len(texture_files)} texture files")
-        
         # Randomly select a texture if available
         texture_path = None
-        if texture_files:
-            texture_path = random.choice(texture_files)
+        if textures:
+            texture_path = random.choice(textures)
             logger.info(f"Using texture: {texture_path}")
         
         # Create textured plane
