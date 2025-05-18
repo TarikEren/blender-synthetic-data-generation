@@ -1,8 +1,8 @@
 /__pycache__
-/models
-/textures
-/images
-/labels
-/visualisations
+/models/*
+/textures/*
+/images/*.png
+/labels/*.txt
+/visualisations/*.png
 *.log
 /blender_utils/__pycache__
