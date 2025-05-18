@@ -6,7 +6,7 @@ This package contains utility modules for the Blender Bounding Box Generator.
 
 from .lighting_utils import setup_lighting
 from .image_utils import generate_single_image
-from .asset_utils import find_textures, import_custom_model
+from .asset_utils import find_textures, import_custom_model, find_models, check_directories
 from .object_utils import create_objects, find_valid_position
 from .logger_utils import create_logger, add_run_separator, logger
 from .camera_utils import create_camera, bpy_coords_to_pixel_coords
@@ -31,4 +31,6 @@ __all__ = [
     'find_textures',
     'create_logger',
     'add_run_separator',
+    'find_models',
+    'check_directories',
 ] 

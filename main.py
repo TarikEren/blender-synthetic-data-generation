@@ -19,7 +19,11 @@ if script_dir not in sys.path:
 import bpy
 
 # Local Imports
-from blender_utils import generate_single_image, add_run_separator, create_logger, logger
+from blender_utils import (generate_single_image,
+                           add_run_separator,
+                           create_logger,
+                           logger,
+                           check_directories)
 
 # Configuration
 from config import config
@@ -29,21 +33,6 @@ logger = create_logger()
 
 # Add initial separator for this run
 logger.info(add_run_separator())
-
-def check_directories():
-    """
-    Check if the images and labels directories exist.
-    """
-    images_dir = os.path.join(config["paths"]["images"])
-    labels_dir = os.path.join(config["paths"]["labels"])
-    vis_dir = os.path.join(config["paths"]["vis"])
-
-    if not os.path.exists(images_dir):
-        raise FileNotFoundError(f"Images directory does not exist: {images_dir}")
-    if not os.path.exists(labels_dir):
-        raise FileNotFoundError(f"Labels directory does not exist: {labels_dir}")
-    if not os.path.exists(vis_dir):
-        raise FileNotFoundError(f"Visualization directory does not exist: {vis_dir}")
 
 def main(num_images: int, custom_model_path: str=None):
     """

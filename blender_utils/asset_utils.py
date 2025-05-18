@@ -108,6 +108,21 @@ def import_custom_model(model_path):
         logger.error(f"Error during model import: {str(e)}")
         raise
 
+def check_directories():
+    """
+    Check if the images and labels directories exist.
+    """
+    images_dir = os.path.join(config["paths"]["images"])
+    labels_dir = os.path.join(config["paths"]["labels"])
+    vis_dir = os.path.join(config["paths"]["vis"])
+
+    if not os.path.exists(images_dir):
+        raise FileNotFoundError(f"Images directory does not exist: {images_dir}")
+    if not os.path.exists(labels_dir):
+        raise FileNotFoundError(f"Labels directory does not exist: {labels_dir}")
+    if not os.path.exists(vis_dir):
+        raise FileNotFoundError(f"Visualization directory does not exist: {vis_dir}")
+
 
 def find_textures() -> list[str]:
     """
