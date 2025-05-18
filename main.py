@@ -36,13 +36,12 @@ logger = create_logger()
 # Add initial separator for this run
 logger.info(add_run_separator())
 
-def main(num_images: int, custom_model_path: str=None):
+def main(num_images: int):
     """
     Main function to run the entire pipeline.
 
     Args:
         num_images (int): The number of images to generate.
-        custom_model_path (str, optional): The path to the custom model to use. Defaults to None.
     """
     try:
         # Check if the directories exist
@@ -50,29 +49,20 @@ def main(num_images: int, custom_model_path: str=None):
 
         all_models = find_models()
         all_textures = find_textures()
+        logger.info(f"Textures found: {all_textures}")
+        logger.info(f"Models found: {all_models}")
 
         # If they do, set the paths
         images_dir = os.path.join(config["paths"]["images"])
         labels_dir = os.path.join(config["paths"]["labels"])
 
-        # Debug logging for custom model path
-        logger.info(f"Custom Model Path: {custom_model_path}")
-        logger.info(f"Custom Model Path Type: {type(custom_model_path)}")
-        logger.info(f"All Models: {all_models}")
-        logger.info(f"All Textures: {all_textures}")
-        if custom_model_path:
-            logger.info(f"Custom Model Path exists: {os.path.exists(custom_model_path)}")
-        
-        logger.info(f"Starting generation of {num_images} images")
-        if custom_model_path:
-            logger.info(f"Using custom model: {custom_model_path}")
-        logger.info(f"Images will be saved to: {images_dir}")
-        logger.info(f"Labels will be saved to: {labels_dir}")
         
         # Generate the specified number of images
         for i in range(num_images):
             try:
-                generate_single_image(i, all_textures, custom_model_path)
+                generate_single_image(index=i,
+                                       textures=all_textures,
+                                       models=all_models)
             except Exception as e:
                 logger.error(f"Error generating image {i}: {str(e)}")
 
@@ -107,9 +97,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate Blender scenes with bounding boxes in YOLO format')
     parser.add_argument('--num-images', type=int, default=1, 
                         help='Number of images to generate (default: 1)')
-    parser.add_argument('--custom-model', type=str, default=None,
-                        help='Path to custom 3D model to import (supports .obj, .fbx, .blend)')
-    
+
     try:
         # Parse arguments if provided, otherwise use defaults
         args = parser.parse_args(argv)
@@ -117,7 +105,7 @@ if __name__ == "__main__":
         
         # Run main with better error handling
         try:
-            main(args.num_images, args.custom_model)
+            main(args.num_images)
         except Exception as e:
             logger.error(f"Error running main: {str(e)}")
             sys.exit(1)

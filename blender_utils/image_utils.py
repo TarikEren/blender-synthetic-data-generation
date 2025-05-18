@@ -24,31 +24,26 @@ from config import config
 
 def generate_single_image(index: int,
                           textures: list[str],
-                          custom_model_path: str=None):
+                          models: list[str]):
     """
     Generate a single image with bounding boxes.
 
     Args:
         index (int): The index of the image to generate.
         textures (list[str]): The list of texture paths to use.
-        custom_model_path (str, optional): The path to the custom model to use. Defaults to None.
     """
-    logger.info(f"Generating image {index+1}")
-    logger.info(f"Textures: {textures}")
-    
     # Convert relative paths to absolute paths
     images_dir_abs = os.path.abspath(config["paths"]["images"])
     labels_dir_abs = os.path.abspath(config["paths"]["labels"])
     visualization_dir_abs = os.path.join(config["paths"]["vis"])
-    
-    if custom_model_path:
-        custom_model_abs = os.path.abspath(custom_model_path)
-        logger.debug(f"Absolute custom model path: {custom_model_abs}")
-        logger.debug(f"Custom model file exists: {os.path.exists(custom_model_abs)}")
+
     
     # Set up filenames for this image
     image_filename = f"image_{index:03d}.png"
     label_filename = f"image_{index:03d}.txt"
+
+    logger.info(f"Generating image: {image_filename} and label: {label_filename}")
+    
     render_path = os.path.join(images_dir_abs, image_filename)
     bbox_path = os.path.join(labels_dir_abs, label_filename)
     visualization_path = os.path.join(visualization_dir_abs, f"vis_{index:03d}.png")
@@ -73,15 +68,23 @@ def generate_single_image(index: int,
             texture_path = random.choice(textures)
             logger.info(f"Using texture: {texture_path}")
         
+        model_path = None
+        if models:
+            model_path = random.choice(models)
+            logger.info(f"Using model: {model_path}")
+        else:
+            logger.error("No models provided")
+            raise ValueError("No models provided")
+        
         # Create textured plane
         create_textured_plane(texture_path)
         
         # Import or create objects
-        if custom_model_path:
+        if model_path:
             logger.info("Using custom model path...")
             try:
                 # Get file extension
-                file_ext = os.path.splitext(custom_model_path)[1].lower()
+                file_ext = os.path.splitext(model_path)[1].lower()
                 logger.debug(f"File extension: {file_ext}")
                 
                 # Determine number of models to create (1-10)
@@ -93,24 +96,12 @@ def generate_single_image(index: int,
                 
                 for i in range(num_models):
                     # Import custom model
-                    if file_ext == '.obj':
-                        logger.info(f"Importing OBJ file {i+1}...")
-                        if hasattr(bpy.ops.wm, 'obj_import'):
-                            bpy.ops.wm.obj_import(filepath=custom_model_path)
-                        else:
-                            bpy.ops.import_scene.obj(filepath=custom_model_path)
-                    elif file_ext == '.fbx':
-                        logger.info(f"Importing FBX file {i+1}...")
-                        if hasattr(bpy.ops.wm, 'fbx_import'):
-                            bpy.ops.wm.fbx_import(filepath=custom_model_path)
-                        else:
-                            bpy.ops.import_scene.fbx(filepath=custom_model_path)
-                    elif file_ext == '.blend':
-                        logger.info(f"Importing Blend file {i+1}...")
-                        bpy.ops.wm.append(filepath=custom_model_path)
+                    logger.info(f"Importing OBJ file {i+1}...")
+                    if hasattr(bpy.ops.wm, 'obj_import'):
+                        bpy.ops.wm.obj_import(filepath=model_path)
                     else:
-                        raise ValueError(f"Unsupported file format: {file_ext}")
-                    
+                        bpy.ops.import_scene.obj(filepath=model_path)
+
                     # Find the newly imported mesh object
                     mesh_objects = [obj for obj in bpy.data.objects if obj.type == 'MESH' and obj not in imported_objects]
                     if not mesh_objects:

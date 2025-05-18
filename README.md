@@ -82,7 +82,6 @@ blender --background --python main.py -- --num-images 20
 ### Command-line Arguments
 
 - `--num-images`    : Number of images to generate (default: 10)
-- `--custom-model`  : Path to a custom model to be used
 
 ### Output
 
