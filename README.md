@@ -43,6 +43,11 @@ The project has been organized into separate files for better maintainability:
       - Scene creation
       - Clearing the scene
       - Creating a textured plane
+- **/models**: Directory containing .obj models.
+- **/textures**: Directory containing .blend textures
+- **/images**: Directory containing the output images
+- **/labels**: Directory containing the output labels
+- **/visualisations**: Directory containing the label visualisations
 
 ## Requirements
 
