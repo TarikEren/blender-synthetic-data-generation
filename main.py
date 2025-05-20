@@ -68,8 +68,6 @@ def main(num_images: int, visualise: bool):
         for texture in all_textures:
             logger.info(f"Path: {texture}")
 
-
-        
         # Generate the specified number of images
         for i in range(num_images):
             try:

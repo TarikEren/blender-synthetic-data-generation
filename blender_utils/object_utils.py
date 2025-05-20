@@ -82,12 +82,35 @@ def apply_transformations(obj, imported_objects):
         # Set the position
         obj.location = position
         
-        # Random rotation around Z axis only
-        obj.rotation_euler = (
-            0,
-            0,
-            random.uniform(0, 360)  # z rotation
-        )
+        # Check if this is a tank model using the class_name property
+        is_tank = "tank" in obj["class_name"].lower()
+
+        # Check if this is a plane model using the class_name property
+        is_plane = "plane" in obj["class_name"].lower()
+        
+        # Apply appropriate rotations
+        if is_tank:
+            # For tanks: rotate 180 degrees around X axis to make them stand upright with turrets forward
+            # Then apply random rotation around Z axis
+            obj.rotation_euler = (
+                math.radians(90),  # x rotation to make tank stand upright with turret forward
+                0,                  # y rotation
+                random.uniform(0, 360)  # z rotation for random orientation
+            )
+        elif is_plane:
+            # For planes only random rotation around Z axis
+            obj.rotation_euler = (
+                0,
+                0,
+                random.uniform(0, 360)  # z rotation
+            )
+        else:
+            # For other objects only random rotation around Z axis
+            obj.rotation_euler = (
+                0,
+                0,
+                random.uniform(0, 360)  # z rotation
+            )
         
         # Update the scene to apply transformations
         bpy.context.view_layer.update()
