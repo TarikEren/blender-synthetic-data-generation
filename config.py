@@ -137,24 +137,6 @@ paths_config = {
     "textures": "./textures"                # The path to the textures
 }
 
-# Output config
-output_config = {
-    "classes": [                            # The classes to be used in the output
-        "class0",
-        "class1",
-        "class2",
-        "class3",
-        "class4"
-    ],
-    "class_colours": [                      # The colours to be used in the output
-        [0, 0, 255],    # Red for class 0
-        [0, 255, 0],    # Green for class 1
-        [255, 0, 0],    # Blue for class 2
-        [255, 255, 0],  # Cyan for class 3
-        [255, 0, 255]   # Magenta for class 4
-    ]
-}
-
 # Merge the config dictionaries into a single config dictionary
 config = {
     "camera": camera_config,
@@ -162,6 +144,5 @@ config = {
     "scene": scene_config,
     "object": object_config,
     "paths": paths_config,
-    "output": output_config,
     "create_visualization": True
 }

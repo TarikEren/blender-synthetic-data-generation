@@ -10,6 +10,7 @@ import cv2
 # Local Imports
 from .logger_utils import logger
 from .camera_utils import bpy_coords_to_pixel_coords
+from .asset_utils import get_classes
 
 # Configuration
 from config import config
@@ -106,7 +107,9 @@ def save_yolo_format(bounding_boxes, output_path):
             # All values are normalized to [0,1]
             f.write(f"{box['class_idx']} {box['x_center']:.6f} {box['y_center']:.6f} {box['width']:.6f} {box['height']:.6f}\n")
 
-def visualize_bounding_boxes(image_path, bbox_file, output_path):
+def visualize_bounding_boxes(image_path: str,
+                             bbox_file: str,
+                             output_path: str) -> None:
     """Create a visualization of bounding boxes on the rendered image.
     
     Args:
@@ -134,8 +137,13 @@ def visualize_bounding_boxes(image_path, bbox_file, output_path):
         
     logger.debug(f"Found {len(lines)} bounding boxes to visualize")
     
-    # Colors for visualization (BGR format)
-    colors = config["output"]["class_colours"]
+    class_colors = [
+        [0, 0, 255],    # Red for class 0
+        [0, 255, 0],    # Green for class 1
+        [255, 0, 0],    # Blue for class 2
+        [255, 255, 0],  # Cyan for class 3
+        [255, 0, 255]   # Magenta for class 4
+    ]
     
     # Draw bounding boxes on the image
     for line in lines:
@@ -161,13 +169,13 @@ def visualize_bounding_boxes(image_path, bbox_file, output_path):
                 y2 = max(0, min(y2, height))
                 
                 # Get color for this class
-                color = colors[class_idx % len(colors)]
+                color = class_colors[class_idx % len(class_colors)]
                 
                 # Draw rectangle
                 cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
                 
                 # Draw class label
-                class_name = config["output"]["classes"][class_idx]
+                class_name = get_classes()[class_idx]
                 cv2.putText(img, class_name, (x1, y1 - 10), 
                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
                 
