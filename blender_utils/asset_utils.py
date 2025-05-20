@@ -2,6 +2,7 @@
 import os
 import math
 import random
+from pathlib import Path
 
 # Third Party Imports
 import bpy
@@ -149,20 +150,55 @@ def find_textures() -> list[str]:
     
     return texture_files
 
-def find_models() -> list[str]:
+def get_models_and_classes():
     """
     Find all model files in the given directory and its subdirectories.
     
     Returns:
-        List of paths to model files
+        (List[(int, str, str)]) List of tuples containing the class index, class name and the model path
+
+        For example: [(0, 'class0', 'models/class0/model_name.obj')]
     """
-    model_files = []
+    # All accepted model extensions
     model_extensions = ['.obj']
 
-    for root, dirs, files in os.walk(config["paths"]["models"]):
+    # Get all classes
+    classes = get_classes()
+
+    # Get all model files
+    model_files = []
+    for root, dirs, files in os.walk("./models"):
         for file in files:
             if any(file.lower().endswith(ext) for ext in model_extensions):
+                # Get the model path
                 model_path = os.path.join(root, file)
+
+                # Get the class name and index
+                class_name = Path(model_path).parent.parent.name
+                class_idx = classes.index(class_name)
+
+                # Get the absolute path
                 model_path = os.path.abspath(model_path)
-                model_files.append(model_path)
+
+                # Add the model to the list
+                model_files.append((class_idx, class_name, model_path))
     return model_files
+
+def get_classes():
+    """
+    Gets the classes from the models folder which is structured as follows:
+    ```
+    models/
+        class1/
+            model_name.obj
+        class2/
+            model_name.obj
+            ...
+    ```
+    The function will return a list of the class names.
+    """
+    models_path = "./models" # Hardcoded path
+    classes = []
+    for path in Path(models_path).glob('*/'):
+        classes.append(path.name)    
+    return classes

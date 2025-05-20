@@ -43,7 +43,15 @@ The project has been organized into separate files for better maintainability:
       - Scene creation
       - Clearing the scene
       - Creating a textured plane
-- **/models**: Directory containing .obj models.
+- **/models**: Directory containing .obj models. It has to conform to the format of:
+```
+    models/
+        class1/
+            model_name.obj
+        class2/
+            model_name.obj
+            ...
+```
 - **/textures**: Directory containing .blend textures
 - **/images**: Directory containing the output images
 - **/labels**: Directory containing the output labels
@@ -82,6 +90,7 @@ blender --background --python main.py -- --num-images 20
 ### Command-line Arguments
 
 - `--num-images`    : Number of images to generate (default: 10)
+- `--visualise`     : Visualise the bounding boxes (default: False)
 
 ### Output
 
