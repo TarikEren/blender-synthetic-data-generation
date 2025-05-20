@@ -52,6 +52,12 @@ The project has been organized into separate files for better maintainability:
             model_name.obj
             ...
 ```
+   - The program currently supports:
+      - Tanks
+      - Aircrafts
+
+      other vehicle models might result in unknown behaivour
+
 - **/textures**: Directory containing .blend textures
 - **/images**: Directory containing the output images
 - **/labels**: Directory containing the output labels

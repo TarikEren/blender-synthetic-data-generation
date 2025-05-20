@@ -23,7 +23,7 @@ from config import config
 
 def generate_image(index: int,
                    textures: list[str],
-                   models: list[str],
+                   models: list[tuple[int, str, str]],
                    visualise: bool) -> None: 
     """
     Generate a single image with bounding boxes.
@@ -109,6 +109,7 @@ def generate_image(index: int,
 
                 # Set the class index
                 obj["class_idx"] = model_class_idx
+                obj["class_name"] = model_class_name
 
                 # Apply transformations
                 apply_transformations(obj, imported_objects)
