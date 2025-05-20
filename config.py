@@ -79,9 +79,9 @@ scene_config = {
         "width": 10,                        # The width of the grid
         "height": 10,                       # The height of the grid
         "default_colour": {
-            "r": 0.5,                       # The red value of the default colour
-            "g": 0.5,                       # The green value of the default colour
-            "b": 0.5,                       # The blue value of the default colour
+            "r": 0.25,                       # The red value of the default colour
+            "g": 0.25,                       # The green value of the default colour
+            "b": 0.25,                       # The blue value of the default colour
             "a": 1.0                        # The alpha value of the default colour
         }
     },
