@@ -52,9 +52,10 @@ The project has been organized into separate files for better maintainability:
             model_name.obj
             ...
 ```
-   - The program currently supports:
-      - Tanks
-      - Aircrafts
+   - The program currently supports classes:
+      - tank
+      - aircraft
+      - helicopter
 
       other vehicle models might result in unknown behaivour
 

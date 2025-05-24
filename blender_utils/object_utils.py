@@ -86,7 +86,13 @@ def apply_transformations(obj, imported_objects):
         is_tank = "tank" in obj["class_name"].lower()
 
         # Check if this is a plane model using the class_name property
-        is_plane = "plane" in obj["class_name"].lower()
+        is_aircraft = "aircraft" in obj["class_name"].lower()
+
+        # Check if this is a helicopter model using the class_name property
+        is_helicopter = "helicopter" in obj["class_name"].lower()
+
+        # Check if this is a truck model using the class_name property
+        is_truck = "truck" in obj["class_name"].lower()
         
         # Apply appropriate rotations
         if is_tank:
@@ -97,10 +103,24 @@ def apply_transformations(obj, imported_objects):
                 0,                  # y rotation
                 random.uniform(0, 360)  # z rotation for random orientation
             )
-        elif is_plane:
+        elif is_aircraft:
             # For planes only random rotation around Z axis
             obj.rotation_euler = (
                 0,
+                0,
+                random.uniform(0, 360)  # z rotation
+            )
+        elif is_helicopter:
+            # For helicopters only random rotation around Z axis
+            obj.rotation_euler = (
+                math.radians(90),
+                0,
+                random.uniform(0, 360)  # z rotation
+            )
+        elif is_truck:
+            # For trucks only random rotation around Z axis
+            obj.rotation_euler = (
+                math.radians(90),
                 0,
                 random.uniform(0, 360)  # z rotation
             )
