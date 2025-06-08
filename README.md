@@ -101,6 +101,8 @@ blender --background --python main.py -- --num-images 20
 - `--num-images`        : Number of images to generate (default: 10)
 - `--visualise`         : Visualise the bounding boxes (default: False)
 - `--starting-filename` : Starting filename of the images and labels. In the format of `image_xxxx`. The program increments the index count by one after each image. Useful if you want to append new images to your already existing dataset. (default: None)
+- `--split`             : Whether a train, test, validation split should be created from the images (default: False)
+   - The ratio of the splits can be found at `config.py`. Default values are `0.8, 0.1, 0.1` for `train, test and val` respectively
 
 ### Output
 
