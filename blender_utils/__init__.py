@@ -13,6 +13,9 @@ from .camera_utils import create_camera, bpy_coords_to_pixel_coords
 from .scene_utils import clear_scene, setup_scene, create_textured_plane
 from .bbox_utils import calculate_bounding_boxes, save_yolo_format, visualize_bounding_boxes
 
+__version__ = "2.1"
+__author__ = "Tarik Eren Tosun"
+
 __all__ = [
     'logger',
     'get_models_and_classes',
