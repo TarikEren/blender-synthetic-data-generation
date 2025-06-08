@@ -48,7 +48,7 @@ def find_valid_position(existing_objects):
         # Try a random position
         x = random.uniform(-30, 30)
         y = random.uniform(-20, 20)
-        z = 0
+        z = 2
         
         if not is_colliding((x, y, z), existing_objects):
             return (x, y, z)
@@ -93,6 +93,8 @@ def apply_transformations(obj, imported_objects):
 
         # Check if this is a truck model using the class_name property
         is_truck = "truck" in obj["class_name"].lower()
+
+        is_armored_vehicle = "armored" in obj["class_name"].lower()
         
         # Apply appropriate rotations
         if is_tank:
@@ -106,8 +108,8 @@ def apply_transformations(obj, imported_objects):
         elif is_aircraft:
             # For planes only random rotation around Z axis
             obj.rotation_euler = (
-                0,
-                0,
+                math.radians(90),
+                math.radians(90),
                 random.uniform(0, 360)  # z rotation
             )
         elif is_helicopter:
@@ -118,6 +120,13 @@ def apply_transformations(obj, imported_objects):
                 random.uniform(0, 360)  # z rotation
             )
         elif is_truck:
+            # For trucks only random rotation around Z axis
+            obj.rotation_euler = (
+                math.radians(90),
+                0,
+                random.uniform(0, 360)  # z rotation
+            )
+        elif is_armored_vehicle:
             # For trucks only random rotation around Z axis
             obj.rotation_euler = (
                 math.radians(90),

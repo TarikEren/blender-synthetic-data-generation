@@ -52,12 +52,14 @@ The project has been organized into separate files for better maintainability:
             model_name.obj
             ...
 ```
+   - The models should have their up axis set as Z and front axis X.
    - The program currently supports classes:
       - tank
       - aircraft
       - helicopter
+      - armored_vehicle
 
-      other vehicle models might result in unknown behaivour
+      other vehicle models might result in unknown behaivour.
 
 - **/textures**: Directory containing .blend textures
 - **/images**: Directory containing the output images
@@ -96,16 +98,17 @@ blender --background --python main.py -- --num-images 20
 
 ### Command-line Arguments
 
-- `--num-images`    : Number of images to generate (default: 10)
-- `--visualise`     : Visualise the bounding boxes (default: False)
+- `--num-images`        : Number of images to generate (default: 10)
+- `--visualise`         : Visualise the bounding boxes (default: False)
+- `--starting-filename` : Starting filename of the images and labels. In the format of `image_xxxx`. The program increments the index count by one after each image. Useful if you want to append new images to your already existing dataset. (default: None)
 
 ### Output
 
 The script generates the following output:
 
 - **./images/image_XXX.png**: Rendered scenes
-- **./images/vis_XXX.png**: Visualization images with bounding boxes
 - **./labels/image_XXX.txt**: YOLO format bounding box coordinates
+- **./visualisations/vis_XXX.png**: Visualization images with bounding boxes
 
 ### YOLO Format
 
@@ -126,4 +129,9 @@ You can modify various aspects of the generator:
 - Edit `utils.py` to change object types, materials, lighting setups, etc.
 - Adjust the number of objects per scene in `create_objects` function (default: 7)
 - Change render settings in `setup_scene` function
-- Modify camera position and field of view in `create_camera` function 
+- Modify camera position and field of view in `create_camera` function
+
+
+## Known Issues
+- The rendered aircraft models can have a acute or obtuse rotation. In that case, check your model's axes. The model's up axis should be Z and front axis should be X. This can be fixed by importing the model and exporting it with the required axis values or simply rotating the aircraft so that its nose points upwards.
+- In case of `Error in main 'model_name' is not in list`, make sure that the files of the model `model_name` conforms to the directory requirements listed at the top underneath [Project Structure](#project-structure).

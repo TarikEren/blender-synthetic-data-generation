@@ -9,6 +9,7 @@ calculates their 2D bounding boxes, and exports them in YOLO format.
 import os
 import sys
 import argparse
+import re
 
 # Add the script's directory to Python's path
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -36,13 +37,29 @@ logger = create_logger()
 # Add initial separator for this run
 logger.info(add_run_separator())
 
-def main(num_images: int, visualise: bool):
+def parse_starting_index(starting_filename: str) -> int:
+    """
+    Parse the starting index from a filename.
+    
+    Args:
+        starting_filename (str): The filename to parse (e.g., 'image_000000')
+        
+    Returns:
+        int: The parsed index number
+    """
+    match = re.search(r'image_(\d+)', starting_filename)
+    if match:
+        return int(match.group(1))
+    raise ValueError(f"Invalid filename format: {starting_filename}. Expected format: image_XXXXXX")
+
+def main(num_images: int, visualise: bool, starting_filename: str = None):
     """
     Main function to run the entire pipeline.
 
     Args:
         num_images (int): The number of images to generate.
         visualise (bool): Whether to visualise the bounding boxes. Defaults to True.
+        starting_filename (str): Optional starting filename (e.g., 'image_004282')
     """
     try:
         # Check if the directories exist
@@ -68,8 +85,14 @@ def main(num_images: int, visualise: bool):
         for texture in all_textures:
             logger.info(f"Path: {texture}")
 
+        # Determine starting index
+        start_index = 0
+        if starting_filename:
+            start_index = parse_starting_index(starting_filename)
+            logger.info(f"Starting from index: {start_index}")
+
         # Generate the specified number of images
-        for i in range(num_images):
+        for i in range(start_index, start_index + num_images):
             try:
                 generate_image(index=i,
                                textures=all_textures,
@@ -111,6 +134,8 @@ if __name__ == "__main__":
                         help='Number of images to generate (default: 1)')
     parser.add_argument('--visualise', action=argparse.BooleanOptionalAction, default=False,
                         help='Visualise the bounding boxes (default: False)')
+    parser.add_argument('--starting-filename', type=str,
+                        help='Starting filename (e.g., image_XXXXXX)')
 
     try:
         # Parse arguments if provided, otherwise use defaults
@@ -119,7 +144,7 @@ if __name__ == "__main__":
         
         # Run main with better error handling
         try:
-            main(args.num_images, args.visualise)
+            main(args.num_images, args.visualise, args.starting_filename)
         except Exception as e:
             logger.error(f"Error running main: {str(e)}")
             sys.exit(1)
@@ -129,7 +154,7 @@ if __name__ == "__main__":
 
         # If argument parsing fails, try with defaults
         try:
-            main()
+            main(1, False)
         except Exception as e:
             logger.error(f"Error running main with defaults: {str(e)}")
             sys.exit(1) 
