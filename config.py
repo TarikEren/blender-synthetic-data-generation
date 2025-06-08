@@ -137,6 +137,12 @@ paths_config = {
     "textures": "./textures"                # The path to the textures
 }
 
+dataset_config = {
+    "train_ratio": 0.8,
+    "test_ratio": 0.1,
+    "val_ratio": 0.1
+}
+
 # Merge the config dictionaries into a single config dictionary
 config = {
     "camera": camera_config,
@@ -144,5 +150,6 @@ config = {
     "scene": scene_config,
     "object": object_config,
     "paths": paths_config,
+    "dataset": dataset_config,
     "create_visualization": True
 }
