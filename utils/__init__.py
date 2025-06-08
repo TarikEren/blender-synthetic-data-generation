@@ -12,6 +12,8 @@ from .logger_utils import create_logger, add_run_separator, logger
 from .camera_utils import create_camera, bpy_coords_to_pixel_coords
 from .scene_utils import clear_scene, setup_scene, create_textured_plane
 from .bbox_utils import calculate_bounding_boxes, save_yolo_format, visualize_bounding_boxes
+from .dataset_utils import split_images, create_dataset_paths, copy_dataset_contents, create_yolo_yaml
+from .package_utils import check_package, install_package, ensure_packages
 
 __version__ = "2.1"
 __author__ = "Tarik Eren Tosun"
@@ -36,4 +38,11 @@ __all__ = [
     'create_logger',
     'add_run_separator',
     'check_directories',
+    'split_images',
+    'create_dataset_paths',
+    'copy_dataset_contents',
+    'create_yolo_yaml',
+    'check_package',
+    'install_package',
+    'ensure_packages'
 ] 
