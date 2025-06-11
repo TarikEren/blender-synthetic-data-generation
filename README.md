@@ -135,5 +135,5 @@ You can modify various aspects of the generator:
 
 
 ## Known Issues
-- The rendered aircraft models can have a acute or obtuse rotation. In that case, check your model's axes. The model's up axis should be Z and front axis should be X. This can be fixed by importing the model and exporting it with the required axis values or simply rotating the aircraft so that its nose points upwards.
-- In case of `Error in main 'model_name' is not in list`, make sure that the files of the model `model_name` conforms to the directory requirements listed at the top underneath [Project Structure](#project-structure).
+- The rendered models can have a acute or obtuse rotation. In that case, check your model's axes. Try rotating the model so that it stands upright (Forward axis x, up axis z) and exporting it using Blender.
+- In case of `Error in main 'model_name' is not in list`, make sure that the files of the model `model_name` conforms to the directory requirements listed at the top under [Project Structure](#project-structure).
