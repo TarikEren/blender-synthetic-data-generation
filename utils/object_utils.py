@@ -26,12 +26,28 @@ def is_colliding(position, existing_objects, min_distance=3.0):
         True if collision would occur, False otherwise
     """
     for obj in existing_objects:
-        # Calculate distance between centers
+        # Get object dimensions and center
+        obj_dims = obj.dimensions
+        obj_center = obj.location
+        
+        # Calculate the maximum dimension of the object
+        max_obj_dim = max(obj_dims.x, obj_dims.y)
+        
+        # Calculate distance between centers in 3D space
         distance = math.sqrt(
-            (position[0] - obj.location.x)**2 + 
-            (position[1] - obj.location.y)**2
+            (position[0] - obj_center.x)**2 + 
+            (position[1] - obj_center.y)**2 +
+            0
         )
-        if distance < min_distance:
+        
+        # Calculate minimum required distance based on object dimensions
+        # Add a buffer to ensure objects don't get too close
+        min_required_distance = max(
+            min_distance,
+            max_obj_dim * 1.5  # Use 1.5 times the maximum dimension as minimum distance
+        )
+        
+        if distance < min_required_distance:
             return True
     return False
 
@@ -44,16 +60,29 @@ def find_valid_position(existing_objects):
     Returns:
         Tuple of (x, y, z) coordinates if valid position found, None otherwise
     """
-    for _ in range(config["object"]["max_collision_check_amount"]):
-        # Try a random position
-        x = random.uniform(-30, 30)
-        y = random.uniform(-20, 20)
-        z = 2
-        
-        if not is_colliding((x, y, z), existing_objects):
-            return (x, y, z)
+    # Get bounds from config
+    grid_size = config["scene"]["grid"]["size"]
+    half_grid = grid_size / 2
     
-    return None 
+    # Add a buffer to keep objects away from the edges
+    edge_buffer = 2.0
+    
+    CAMERA_BOUNDS = {
+        'x_min': -half_grid + edge_buffer,  # Half of scene grid size with buffer
+        'x_max': half_grid - edge_buffer,   # Half of scene grid size with buffer
+        'y_min': -half_grid + edge_buffer,  # Half of scene grid size with buffer
+        'y_max': half_grid - edge_buffer,   # Half of scene grid size with buffer
+    }
+    
+    for _ in range(config["object"]["max_collision_check_amount"]):
+        # Try a random position within camera bounds
+        x = random.uniform(CAMERA_BOUNDS['x_min'], CAMERA_BOUNDS['x_max'])
+        y = random.uniform(CAMERA_BOUNDS['y_min'], CAMERA_BOUNDS['y_max'])
+        
+        if not is_colliding((x, y, 0), existing_objects):
+            return (x, y, 0)  # Return with z=0, we'll adjust height in apply_transformations
+    
+    return None
 
 def apply_transformations(obj, imported_objects):
     dims = obj.dimensions
@@ -82,65 +111,19 @@ def apply_transformations(obj, imported_objects):
         # Set the position
         obj.location = position
         
-        # Check if this is a tank model using the class_name property
-        is_tank = "tank" in obj["class_name"].lower()
-
-        # Check if this is a plane model using the class_name property
-        is_aircraft = "aircraft" in obj["class_name"].lower()
-
-        # Check if this is a helicopter model using the class_name property
-        is_helicopter = "helicopter" in obj["class_name"].lower()
-
-        # Check if this is a truck model using the class_name property
-        is_truck = "truck" in obj["class_name"].lower()
-
-        is_armored_vehicle = "armored" in obj["class_name"].lower()
-        
-        # Apply appropriate rotations
-        if is_tank:
-            # For tanks: rotate 180 degrees around X axis to make them stand upright with turrets forward
-            # Then apply random rotation around Z axis
-            obj.rotation_euler = (
-                math.radians(90),  # x rotation to make tank stand upright with turret forward
-                0,                  # y rotation
-                random.uniform(0, 360)  # z rotation for random orientation
-            )
-        elif is_aircraft:
-            # For planes only random rotation around Z axis
-            obj.rotation_euler = (
-                math.radians(90),
-                math.radians(90),
-                random.uniform(0, 360)  # z rotation
-            )
-        elif is_helicopter:
-            # For helicopters only random rotation around Z axis
-            obj.rotation_euler = (
-                math.radians(90),
-                0,
-                random.uniform(0, 360)  # z rotation
-            )
-        elif is_truck:
-            # For trucks only random rotation around Z axis
-            obj.rotation_euler = (
-                math.radians(90),
-                0,
-                random.uniform(0, 360)  # z rotation
-            )
-        elif is_armored_vehicle:
-            # For trucks only random rotation around Z axis
-            obj.rotation_euler = (
-                math.radians(90),
-                0,
-                random.uniform(0, 360)  # z rotation
-            )
-        else:
-            # For other objects only random rotation around Z axis
-            obj.rotation_euler = (
-                0,
-                0,
-                random.uniform(0, 360)  # z rotation
-            )
+        # Rotate the object so that it stands upright
+        obj.rotation_euler = (
+            math.radians(90),       # x rotation
+            0,                      # y rotation
+            random.uniform(0, 360)  # z rotation for random orientation
+        )
         
         # Update the scene to apply transformations
         bpy.context.view_layer.update()
+        
+        # Adjust the height to ensure object sits on ground
+        # Get the object's dimensions after transformations
+        final_dims = obj.dimensions
+        # Move the object up by half its height to sit on ground
+        obj.location.z = final_dims.z / 2
         
